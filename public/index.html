@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Impulsiona Estágios - IFPB</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="logo-area">
+      <img src="img/logo_impulsiona.png" alt="Impulsiona Estágios IFPB" class="main-logo" />
+      <div class="header-search">
+        <input type="text" id="jobSearch" placeholder="Pesquisar vagas" onkeyup="handleSearch()">
+      </div>
+      <nav>
+        <ul>
+          <li><a onclick="switchView('jobs')" id="nav-vagas" class="active">Vagas de Estágio</a></li>
+          <li><a onclick="switchView('register')" id="nav-cadastro">Cadastro de Vagas</a></li>
+          <li><a href="#">Notificações</a></li>
+          <li><a href="#">Meu Perfil</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div id="view-jobs-container" class="view-section active-view">
+      <div class="multi-filters-bar">
+        <div class="filtro-container">
+          <button class="btn-gatilho" data-alvo="dropdown-cidade">Cidade ▾</button>
+          <div id="dropdown-cidade" class="dropdown-menu escondido">
+            <div class="opcoes">
+              <label><input type="checkbox" class="cb-filtro" data-tipo="cidade" value="João Pessoa"> João Pessoa</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="cidade" value="Cabedelo"> Cabedelo</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="cidade" value="Campina Grande"> Campina Grande</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="cidade" value="Cajazeiras"> Cajazeiras</label>
+            </div>
+            <button class="btn-acao btn-aplicar-filtro">Aplicar Filtro</button>
+          </div>
+        </div>
+
+        <div class="filtro-container">
+          <button class="btn-gatilho" data-alvo="dropdown-curso">Curso ▾</button>
+          <div id="dropdown-curso" class="dropdown-menu escondido">
+            <div class="opcoes">
+              <label><input type="checkbox" class="cb-filtro" data-tipo="curso" value="Eletrotécnica"> Eletrotécnica</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="curso" value="Mecânica"> Mecânica</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="curso" value="Informática"> Informática</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="curso" value="Edificações"> Edificações</label>
+            </div>
+            <button class="btn-acao btn-aplicar-filtro">Aplicar Filtro</button>
+          </div>
+        </div>
+
+        <div class="filtro-container">
+          <button class="btn-gatilho" data-alvo="dropdown-remuneracao">Remuneração ▾</button>
+          <div id="dropdown-remuneracao" class="dropdown-menu escondido">
+            <div class="opcoes">
+              <label><input type="checkbox" class="cb-filtro" data-tipo="remuneracao" value="ate_800"> Até R$ 800</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="remuneracao" value="acima_800"> Acima de R$ 800</label>
+            </div>
+            <button class="btn-acao btn-aplicar-filtro">Aplicar Filtro</button>
+          </div>
+        </div>
+
+        <div class="filtro-container">
+          <button class="btn-gatilho" data-alvo="dropdown-data">Data de Anúncio ▾</button>
+          <div id="dropdown-data" class="dropdown-menu escondido">
+            <div class="opcoes">
+              <label><input type="checkbox" class="cb-filtro" data-tipo="data" value="hoje"> Hoje (Horas atrás)</label>
+              <label><input type="checkbox" class="cb-filtro" data-tipo="data" value="semana"> Esta semana (Dias atrás)</label>
+            </div>
+            <button class="btn-acao btn-aplicar-filtro">Aplicar Filtro</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-wrapper">
+        <section class="sidebar-list">
+          <div class="sidebar-header">
+            <div>
+              <h3>Vagas Disponíveis</h3>
+              <small id="count-label">Carregando...</small>
+            </div>
+          </div>
+          <div id="job-list"></div>
+        </section>
+
+        <section class="details-view" id="job-details">
+          <p style="text-align: center; color: #777; margin-top: 50px">
+            Selecione uma vaga para ver os detalhes completos.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <div id="view-register-container" class="view-section">
+      <aside class="profile-sidebar">
+        <div class="profile-card">
+          <div class="card-header-green">
+            <div class="avatar-circle">E</div>
+          </div>
+          <div class="card-body">
+            <h3>Empresa X</h3>
+            <p>João Pessoa, Paraíba, Brasil.</p>
+          </div>
+        </div>
+      </aside>
+
+      <section class="form-area">
+        <h2 class="page-title">Cadastro de Vagas de Estágio</h2>
+        <div class="form-box">
+          <form id="createJobForm">
+            <span class="section-label">Dados da Empresa</span>
+            <div class="form-row">
+              <div class="col-half">
+                <label>Nome da Empresa</label>
+                <input type="text" id="regCompany" placeholder="Ex: Tech Solutions LTDA" required>
+              </div>
+              <div class="col-half">
+                <label>E-mail de Contato</label>
+                <input type="email" id="regEmail" placeholder="empresa@email.com" required>
+              </div>
+            </div>
+
+            <span class="section-label">Dados da Vaga</span>
+            <div class="form-row">
+              <div class="col-half">
+                <label>Título da Vaga</label>
+                <input type="text" id="regTitle" placeholder="Ex: Estágio em TI" required>
+              </div>
+              <div class="col-half">
+                <label>Área de Atuação</label>
+                <select id="regTarget">
+                  <option value="Informática">Informática</option>
+                  <option value="Mecânica">Mecânica</option>
+                  <option value="Eletrotécnica">Eletrotécnica</option>
+                  <option value="Edificações">Edificações</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="col-half">
+                <label>Cidade</label>
+                <input type="text" id="regCity" placeholder="João Pessoa - PB" required>
+              </div>
+              <div class="col-half">
+                <label>Bolsa (R$)</label>
+                <input type="number" id="regSalary" placeholder="Ex: 800" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="col-half">
+                <label>Descrição da Vaga</label>
+                <textarea id="regDesc" placeholder="Descreva as atividades"></textarea>
+              </div>
+              <div class="col-half">
+                <label>Requisitos</label>
+                <textarea id="regReq" placeholder="Ex: Conhecimentos básicos"></textarea>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-register">Publicar Vaga</button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/dados.js"></script>
+  <script src="js/funcionalidades.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
