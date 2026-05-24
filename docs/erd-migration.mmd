@@ -1,0 +1,39 @@
+erDiagram
+    VAGAS ||--o{ CANDIDATURAS : "tem"
+    CANDIDATOS ||--o{ CANDIDATURAS : "faz"
+
+    VAGAS {
+        int id PK
+        string title
+        string company
+        string location
+        string time
+        string type
+        string salary
+        string target
+        string desc
+        json requirements
+        json benefits
+        datetime created_at
+    }
+
+    CANDIDATOS {
+        int id PK
+        string name
+        string email UK
+        string phone
+        string location
+        string resume
+        json skills
+        string experience
+        datetime created_at
+    }
+
+    CANDIDATURAS {
+        int id PK
+        int vaga_id FK
+        int candidato_id FK
+        string status
+        string cover_letter
+        datetime applied_at
+    }
