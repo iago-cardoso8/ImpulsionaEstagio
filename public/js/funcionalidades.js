@@ -2,10 +2,19 @@ async function carregarVagas() {
     try {
         const resposta = await fetch('/api/vagas');
         if (!resposta.ok) throw new Error('Erro ao carregar vagas');
-        jobs = await resposta.json();
+        const resultado = await resposta.json();
+        
+        // A API retorna { sucesso: true, quantidade: X, dados: [...] }
+        if (resultado.sucesso && resultado.dados) {
+            jobs = resultado.dados;
+            console.log(`✅ ${jobs.length} vagas carregadas`);
+        } else {
+            throw new Error('Resposta inválida da API');
+        }
+        
         renderJobs();
     } catch (erro) {
-        console.error(erro);
+        console.error('❌ Erro ao carregar vagas:', erro);
         document.getElementById('count-label').innerText = 'Erro ao carregar vagas';
     }
 }
