@@ -22,8 +22,8 @@ function findById(id) {
 
 function create(data) {
     const stmt = db.prepare(`
-        INSERT INTO vagas (title, company, location, time, type, salary, target, desc, requirements, benefits)
-        VALUES (@title, @company, @location, @time, @type, @salary, @target, @desc, @requirements, @benefits)
+        INSERT INTO vagas (title, company, location, email, time, type, salary, target, desc, requirements, benefits)
+        VALUES (@title, @company, @location, @email, @time, @type, @salary, @target, @desc, @requirements, @benefits)
     `);
 
     const result = stmt.run({
@@ -57,8 +57,8 @@ function update(id, data) {
         salary:       data.salary       ?? current.salary,
         target:       data.target       ?? current.target,
         desc:         data.desc         ?? current.desc,
-        requirements: data.requirements ? JSON.stringify(data.requirements) : current.requirements,
-        benefits:     data.benefits     ? JSON.stringify(data.benefits)     : current.benefits
+        requirements: data.requirements !== undefined ? JSON.stringify(data.requirements) : current.requirements,
+        benefits:     data.benefits     !== undefined ? JSON.stringify(data.benefits)     : current.benefits
     };
 
     db.prepare(`
