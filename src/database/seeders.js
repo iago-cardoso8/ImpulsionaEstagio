@@ -10,14 +10,15 @@ function runSeeders() {
     }
 
     const insert = db.prepare(`
-        INSERT INTO vagas (title, company, location, time, type, salary, target, desc, requirements, benefits)
-        VALUES (@title, @company, @location, @time, @type, @salary, @target, @desc, @requirements, @benefits)
+        INSERT INTO vagas (title, company, location, email, time, type, salary, target, desc, requirements, benefits)
+        VALUES (@title, @company, @location, @email, @time, @type, @salary, @target, @desc, @requirements, @benefits)
     `);
 
     const insertMany = db.transaction((vagas) => {
         for (const vaga of vagas) {
             insert.run({
                 ...vaga,
+                email: vaga.email || 'contato@empresa.com',
                 requirements: JSON.stringify(vaga.requirements || []),
                 benefits: JSON.stringify(vaga.benefits || [])
             });

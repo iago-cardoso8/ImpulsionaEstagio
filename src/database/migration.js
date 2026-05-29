@@ -1,5 +1,13 @@
 const db = require('./database');
 
+function addColumnIfMissing(table, column, definition) {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all().map(col => col.name);
+    if (!columns.includes(column)) {
+        db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`).run();
+        console.log(`✅ Coluna adicionada: ${table}.${column}`);
+    }
+}
+
 function runMigration() {
     db.exec(`
         CREATE TABLE IF NOT EXISTS vagas (
@@ -7,6 +15,7 @@ function runMigration() {
             title           TEXT    NOT NULL,
             company         TEXT    NOT NULL,
             location        TEXT    NOT NULL,
+            email           TEXT    NOT NULL DEFAULT '',
             time            TEXT    DEFAULT 'Agora mesmo',
             type            TEXT    DEFAULT 'Estágio',
             salary          TEXT    DEFAULT 'A combinar',
@@ -40,6 +49,8 @@ function runMigration() {
             FOREIGN KEY (candidato_id) REFERENCES candidatos(id) ON DELETE CASCADE
         );
     `);
+
+    addColumnIfMissing('vagas', 'email', "TEXT NOT NULL DEFAULT ''");
 
     console.log('✅ Migration executada: tabelas "vagas", "candidatos" e "candidaturas" prontas.');
 }

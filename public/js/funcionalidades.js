@@ -42,19 +42,27 @@ function showDetails(job) {
     const reqList = Array.isArray(job.requirements)
         ? job.requirements.map(r => `<li>${r}</li>`).join("")
         : `<li>${job.requirements}</li>`;
+    const benList = Array.isArray(job.benefits)
+        ? job.benefits.map(b => `<li>${b}</li>`).join("")
+        : job.benefits ? `<li>${job.benefits}</li>` : '<li>Nenhum benefício listado</li>';
 
     document.getElementById("job-details").innerHTML = `
     <div style="border-bottom:1px solid #eee; padding-bottom:20px;">
       <h2 style="margin:0; color:#333">${job.title}</h2>
       <h4 style="margin:5px 0; color:#666">${job.company}</h4>
       <p>${job.location} | <strong>${job.salary}</strong></p>
+      <p style="margin:4px 0 0; color:#555">E-mail: ${job.email || 'Não informado'}</p>
       <div class="tags">
          <span class="tag">${job.target}</span>
          <span class="tag">${job.type}</span>
       </div>
-      <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
-        ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
-      </button>
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
+        <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>
+        <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
+          ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
+        </button>
+      </div>
     </div>
     <div style="margin-top:20px">
       <div class="info-block">
@@ -64,6 +72,10 @@ function showDetails(job) {
       <div class="info-block">
          <h4>Requisitos</h4>
          <ul>${reqList}</ul>
+      </div>
+      <div class="info-block">
+         <h4>Benefícios</h4>
+         <ul>${benList}</ul>
       </div>
     </div>
   `;

@@ -41,43 +41,168 @@ botoesAplicar.forEach(botao => {
     });
 });
 
-// Cadastro de nova vaga via fetch (POST /api/vagas)
-document.getElementById('createJobForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
+const form = document.getElementById('createJobForm');
+const editJobIdInput = document.getElementById('editJobId');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const formMessage = document.getElementById('formMessage');
 
-    const novaVaga = {
-        title: document.getElementById('regTitle').value,
-        company: document.getElementById('regCompany').value,
-        location: document.getElementById('regCity').value,
-        salary: "R$ " + document.getElementById('regSalary').value + ",00",
+cancelEditBtn.style.display = 'none';
+
+function setFormMessage(message, isError = true) {
+    if (!formMessage) return;
+    formMessage.textContent = message;
+    formMessage.style.color = isError ? '#b00020' : '#1f8a3d';
+}
+
+function clearFormMessage() {
+    if (!formMessage) return;
+    formMessage.textContent = '';
+}
+
+function buildJobPayload() {
+    return {
+        title: document.getElementById('regTitle').value.trim(),
+        company: document.getElementById('regCompany').value.trim(),
+        email: document.getElementById('regEmail').value.trim(),
+        location: document.getElementById('regCity').value.trim(),
+        salary: `R$ ${document.getElementById('regSalary').value.trim()},00`,
         target: document.getElementById('regTarget').value,
-        desc: document.getElementById('regDesc').value,
-        requirements: document.getElementById('regReq').value.split('\n').filter(r => r.trim() !== ''),
-        type: "Estágio",
-        time: "Agora mesmo"
+        desc: document.getElementById('regDesc').value.trim(),
+        requirements: document.getElementById('regReq').value.split('\n').map(item => item.trim()).filter(item => item !== ''),
+        benefits: document.getElementById('regBenefits').value.split('\n').map(item => item.trim()).filter(item => item !== ''),
+        type: 'Estágio',
+        time: 'Agora mesmo'
     };
+}
+
+function validateJobPayload(payload) {
+    const required = ['title', 'company', 'email', 'location', 'salary', 'target'];
+    for (const field of required) {
+        if (!payload[field] || payload[field].toString().trim() === '') {
+            return `O campo ${field} é obrigatório.`;
+        }
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(payload.email)) {
+        return 'Informe um e-mail válido.';
+    }
+
+    const numericSalary = Number(String(payload.salary).replace(/[^0-9.,]/g, '').replace(',', '.'));
+    if (Number.isNaN(numericSalary) || numericSalary <= 0) {
+        return 'Informe um valor de bolsa válido maior que zero.';
+    }
+
+    return null;
+}
+
+function resetFormState() {
+    editJobIdInput.value = '';
+    cancelEditBtn.style.display = 'none';
+    form.querySelector('button[type="submit"]').textContent = 'Publicar Vaga';
+    clearFormMessage();
+}
+
+function populateJobForm(job) {
+    editJobIdInput.value = job.id;
+    document.getElementById('regTitle').value = job.title || '';
+    document.getElementById('regCompany').value = job.company || '';
+    document.getElementById('regEmail').value = job.email || '';
+    document.getElementById('regCity').value = job.location || '';
+    document.getElementById('regSalary').value = String(job.salary).replace(/[^0-9]/g, '') || '';
+    document.getElementById('regTarget').value = job.target || 'Informática';
+    document.getElementById('regDesc').value = job.desc || '';
+    document.getElementById('regReq').value = Array.isArray(job.requirements) ? job.requirements.join('\n') : job.requirements || '';
+    document.getElementById('regBenefits').value = Array.isArray(job.benefits) ? job.benefits.join('\n') : job.benefits || '';
+    form.querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
+    cancelEditBtn.style.display = 'inline-block';
+    clearFormMessage();
+}
+
+async function submitJobForm(event) {
+    event.preventDefault();
+
+    const payload = buildJobPayload();
+    const validationError = validateJobPayload(payload);
+    if (validationError) {
+        setFormMessage(validationError, true);
+        return;
+    }
+
+    const isEditing = !!editJobIdInput.value;
+    const method = isEditing ? 'PUT' : 'POST';
+    const url = isEditing ? `/api/vagas/${editJobIdInput.value}` : '/api/vagas';
 
     try {
-        const resposta = await fetch('/api/vagas', {
-            method: 'POST',
+        const response = await fetch(url, {
+            method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(novaVaga)
+            body: JSON.stringify(payload)
         });
 
-        if (!resposta.ok) {
-            const erro = await resposta.json();
-            alert('Erro: ' + erro.erro);
+        const result = await response.json();
+        if (!response.ok) {
+            setFormMessage(result.erro || 'Erro ao salvar vaga.', true);
             return;
         }
 
-        alert("Vaga cadastrada com sucesso!");
-        this.reset();
+        setFormMessage(result.mensagem || 'Operação realizada com sucesso.', false);
+        form.reset();
+        resetFormState();
+        await carregarVagas();
         switchView('jobs');
-    } catch (erro) {
-        console.error(erro);
-        alert('Erro de conexão ao cadastrar vaga');
+    } catch (error) {
+        console.error(error);
+        setFormMessage('Falha na conexão com o servidor.', true);
     }
-});
+}
+
+async function startJobEdit(id) {
+    try {
+        const job = await loadJobById(id);
+        if (!job) {
+            alert('Vaga não encontrada.');
+            return;
+        }
+        populateJobForm(job);
+        switchView('register');
+    } catch (error) {
+        console.error(error);
+        alert('Erro ao carregar os dados da vaga para edição.');
+    }
+}
+
+async function deleteJob(id) {
+    if (!confirm('Tem certeza que deseja excluir esta vaga?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/vagas/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok) {
+            alert(result.erro || 'Erro ao excluir vaga.');
+            return;
+        }
+
+        await carregarVagas();
+        switchView('jobs');
+        alert(result.mensagem || 'Vaga excluída com sucesso.');
+    } catch (error) {
+        console.error(error);
+        alert('Erro de conexão ao excluir vaga.');
+    }
+}
+
+function cancelEdit() {
+    form.reset();
+    resetFormState();
+}
+
+form.addEventListener('submit', submitJobForm);
+cancelEditBtn.addEventListener('click', cancelEdit);
+window.startJobEdit = startJobEdit;
+window.deleteJob = deleteJob;
 
 // Iniciar a tela carregando as vagas da API
 carregarVagas();

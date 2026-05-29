@@ -112,6 +112,8 @@
         <h2 class="page-title">Cadastro de Vagas de Estágio</h2>
         <div class="form-box">
           <form id="createJobForm">
+            <input type="hidden" id="editJobId">
+
             <span class="section-label">Dados da Empresa</span>
             <div class="form-row">
               <div class="col-half">
@@ -163,7 +165,18 @@
               </div>
             </div>
 
-            <button type="submit" class="btn-register">Publicar Vaga</button>
+            <div class="form-row">
+              <div class="col-full">
+                <label>Benefícios (uma linha por item)</label>
+                <textarea id="regBenefits" placeholder="Ex: Vale Transporte, Refeitório"></textarea>
+              </div>
+            </div>
+
+            <div id="formMessage" class="form-message"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn-register">Publicar Vaga</button>
+              <button type="button" id="cancelEditBtn" class="btn-secondary hidden">Cancelar edição</button>
+            </div>
           </form>
         </div>
       </section>

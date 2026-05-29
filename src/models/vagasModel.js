@@ -30,6 +30,7 @@ function create(data) {
         title:        data.title        || '',
         company:      data.company      || '',
         location:     data.location     || '',
+        email:        data.email        || '',
         time:         data.time         || 'Agora mesmo',
         type:         data.type         || 'Estágio',
         salary:       data.salary       || 'A combinar',
@@ -50,6 +51,7 @@ function update(id, data) {
         title:        data.title        ?? current.title,
         company:      data.company      ?? current.company,
         location:     data.location     ?? current.location,
+        email:        data.email        ?? current.email,
         time:         data.time         ?? current.time,
         type:         data.type         ?? current.type,
         salary:       data.salary       ?? current.salary,
@@ -61,7 +63,7 @@ function update(id, data) {
 
     db.prepare(`
         UPDATE vagas SET
-            title=@title, company=@company, location=@location, time=@time,
+            title=@title, company=@company, location=@location, email=@email, time=@time,
             type=@type, salary=@salary, target=@target, desc=@desc,
             requirements=@requirements, benefits=@benefits
         WHERE id=@id

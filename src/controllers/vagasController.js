@@ -7,7 +7,7 @@ const VagasModel = require('../models/vagasModel');
 // ────────────────────────────────────────────────────────────
 
 function validarCamposObrigatorios(data) {
-    const camposObrigatorios = ['title', 'company', 'location', 'salary', 'target'];
+    const camposObrigatorios = ['title', 'company', 'location', 'salary', 'target', 'email'];
     const faltantes = camposObrigatorios.filter(campo => !data[campo] || data[campo].toString().trim() === '');
     
     if (faltantes.length > 0) {
@@ -16,6 +16,30 @@ function validarCamposObrigatorios(data) {
             erro: 'Campos obrigatórios ausentes',
             camposRequeridos: camposObrigatorios,
             camposFaltantes: faltantes
+        };
+    }
+    return null;
+}
+
+function validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regex.test(email)) {
+        return {
+            status: 400,
+            erro: 'E-mail em formato inválido',
+            campo: 'email'
+        };
+    }
+    return null;
+}
+
+function validarSalary(salary) {
+    const valor = Number(String(salary).replace(/[^0-9.,]/g, '').replace(',', '.'));
+    if (Number.isNaN(valor) || valor <= 0) {
+        return {
+            status: 400,
+            erro: 'Salário deve ser um valor numérico válido maior que zero',
+            campo: 'salary'
         };
     }
     return null;
@@ -89,7 +113,7 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
     try {
-        const erroValidacao = validarCamposObrigatorios(req.body);
+        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email) || validarSalary(req.body.salary);
         if (erroValidacao) {
             return res.status(erroValidacao.status).json(erroValidacao);
         }
@@ -119,6 +143,11 @@ router.put('/:id', (req, res) => {
         const erroId = validarId(req.params.id);
         if (erroId) {
             return res.status(erroId.status).json(erroId);
+        }
+
+        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email) || validarSalary(req.body.salary);
+        if (erroValidacao) {
+            return res.status(erroValidacao.status).json(erroValidacao);
         }
 
         const id = parseInt(req.params.id);
