@@ -145,9 +145,47 @@
 
             <div class="form-row">
               <div class="col-half">
-                <label>Cidade</label>
-                <input type="text" id="regCity" placeholder="João Pessoa - PB" required>
+                <label>UF</label>
+                <select id="regState" required>
+                  <option value="" disabled selected>Selecione o estado</option>
+                  <option value="AC">AC</option>
+                  <option value="AL">AL</option>
+                  <option value="AP">AP</option>
+                  <option value="AM">AM</option>
+                  <option value="BA">BA</option>
+                  <option value="CE">CE</option>
+                  <option value="DF">DF</option>
+                  <option value="ES">ES</option>
+                  <option value="GO">GO</option>
+                  <option value="MA">MA</option>
+                  <option value="MT">MT</option>
+                  <option value="MS">MS</option>
+                  <option value="MG">MG</option>
+                  <option value="PA">PA</option>
+                  <option value="PB">PB</option>
+                  <option value="PR">PR</option>
+                  <option value="PE">PE</option>
+                  <option value="PI">PI</option>
+                  <option value="RJ">RJ</option>
+                  <option value="RN">RN</option>
+                  <option value="RS">RS</option>
+                  <option value="RO">RO</option>
+                  <option value="RR">RR</option>
+                  <option value="SC">SC</option>
+                  <option value="SP">SP</option>
+                  <option value="SE">SE</option>
+                  <option value="TO">TO</option>
+                </select>
               </div>
+              <div class="col-half">
+                <label>Cidade</label>
+                <select id="regCity" disabled required>
+                  <option value="" disabled selected>Selecione primeiro a UF</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
               <div class="col-half">
                 <label>Bolsa (R$)</label>
                 <input type="number" id="regSalary" placeholder="Ex: 800" required>
@@ -220,48 +258,52 @@
         <section class="profile-details">
           <h2 class="page-title">Meu Perfil</h2>
 
-          <div class="profile-section">
-            <span class="section-label">Dados Pessoais</span>
-            <div class="profile-row">
-              <div class="profile-field">
-                <label>Nome completo</label>
-                <input type="text" value="Ana Silva" readonly>
+          <form id="profileForm">
+            <div class="profile-section">
+              <span class="section-label">Dados Pessoais</span>
+              <div class="profile-row">
+                <div class="profile-field">
+                  <label>Nome completo</label>
+                  <input id="profileName" type="text" required>
+                </div>
+                <div class="profile-field">
+                  <label>E-mail</label>
+                  <input id="profileEmail" type="email" required>
+                </div>
               </div>
-              <div class="profile-field">
-                <label>E-mail</label>
-                <input type="email" value="ana.silva@ifpb.edu.br" readonly>
+              <div class="profile-row">
+                <div class="profile-field">
+                  <label>Curso</label>
+                  <input id="profileCourse" type="text" required>
+                </div>
+                <div class="profile-field">
+                  <label>Campus</label>
+                  <input id="profileCampus" type="text" required>
+                </div>
               </div>
             </div>
-            <div class="profile-row">
-              <div class="profile-field">
-                <label>Curso</label>
-                <input type="text" value="Informática" readonly>
-              </div>
-              <div class="profile-field">
-                <label>Campus</label>
-                <input type="text" value="João Pessoa" readonly>
-              </div>
-            </div>
-          </div>
 
-          <div class="profile-section">
-            <span class="section-label">Preferências</span>
-            <div class="profile-row">
-              <div class="profile-field">
-                <label>Status</label>
-                <input type="text" value="Em busca de estágio" readonly>
-              </div>
-              <div class="profile-field">
-                <label>Disponibilidade</label>
-                <input type="text" value="Período Integral" readonly>
+            <div class="profile-section">
+              <span class="section-label">Preferências</span>
+              <div class="profile-row">
+                <div class="profile-field">
+                  <label>Status</label>
+                  <input id="profileStatus" type="text">
+                </div>
+                <div class="profile-field">
+                  <label>Disponibilidade</label>
+                  <input id="profileAvailability" type="text">
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="profile-actions">
-            <button type="button" class="btn-register">Editar perfil</button>
-            <button type="button" class="btn-secondary">Alterar senha</button>
-          </div>
+            <div id="profileMessage" class="form-message"></div>
+
+            <div class="profile-actions">
+              <button type="button" id="saveProfileBtn" class="btn-register">Salvar perfil</button>
+              <button type="button" id="cancelProfileBtn" class="btn-secondary">Cancelar</button>
+            </div>
+          </form>
         </section>
       </div>
     </div>

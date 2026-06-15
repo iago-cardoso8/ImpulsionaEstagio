@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const { runMigration } = require('./src/database/migration');
 const { runSeeders }   = require('./src/database/seeders');
 const vagasController  = require('./src/controllers/vagasController');
+const profileController = require('./src/controllers/profileController');
+const notificationController = require('./src/controllers/notificationController');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +22,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Rotas ───────────────────────────────────────────────────────
 app.use('/api/vagas', vagasController);
+app.use('/api/perfil', profileController);
+app.use('/api/notificacoes', notificationController);
 
 // Rota principal - entrega o index.html
 app.get('/', (req, res) => {

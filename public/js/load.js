@@ -73,3 +73,62 @@ async function syncDatabase() {
     
     return jobs;
 }
+
+async function loadProfileFromDatabase() {
+    try {
+        const response = await fetch('/api/perfil');
+        if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
+
+        const resultado = await response.json();
+        if (resultado.sucesso && resultado.dados) {
+            console.log('✅ Perfil carregado do banco de dados');
+            return resultado.dados;
+        }
+        return null;
+    } catch (erro) {
+        console.error('❌ Erro ao carregar perfil:', erro);
+        return null;
+    }
+}
+
+async function loadNotificationsFromDatabase() {
+    try {
+        const response = await fetch('/api/notificacoes');
+        if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
+
+        const resultado = await response.json();
+        if (resultado.sucesso && resultado.dados) {
+            console.log(`✅ ${resultado.quantidade} notificações carregadas do banco de dados`);
+            return resultado.dados;
+        }
+        return [];
+    } catch (erro) {
+        console.error('❌ Erro ao carregar notificações:', erro);
+        return [];
+    }
+}
+
+async function saveProfileToDatabase(profileData) {
+    try {
+        const response = await fetch('/api/perfil', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profileData)
+        });
+
+        if (!response.ok) {
+            const resultado = await response.json();
+            throw new Error(resultado.erro || `Erro na requisição: ${response.status}`);
+        }
+
+        const resultado = await response.json();
+        if (resultado.sucesso && resultado.dados) {
+            console.log('✅ Perfil salvo no banco de dados');
+            return resultado.dados;
+        }
+        throw new Error(resultado.erro || 'Erro ao salvar perfil');
+    } catch (erro) {
+        console.error('❌ Erro ao salvar perfil:', erro);
+        throw erro;
+    }
+}

@@ -48,11 +48,31 @@ function runMigration() {
             FOREIGN KEY (vaga_id) REFERENCES vagas(id) ON DELETE CASCADE,
             FOREIGN KEY (candidato_id) REFERENCES candidatos(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS perfil (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            name            TEXT    NOT NULL,
+            email           TEXT    NOT NULL,
+            course          TEXT    NOT NULL,
+            campus          TEXT    NOT NULL,
+            status          TEXT    DEFAULT '',
+            availability    TEXT    DEFAULT '',
+            created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            title           TEXT    NOT NULL,
+            message         TEXT    NOT NULL,
+            time            TEXT    NOT NULL,
+            created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `);
 
     addColumnIfMissing('vagas', 'email', "TEXT NOT NULL DEFAULT ''");
 
-    console.log('✅ Migration executada: tabelas "vagas", "candidatos" e "candidaturas" prontas.');
+    console.log('✅ Migration executada: tabelas "vagas", "candidatos", "candidaturas", "perfil" e "notifications" prontas.');
 }
 
 module.exports = { runMigration };

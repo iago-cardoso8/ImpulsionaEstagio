@@ -45,6 +45,63 @@ const form = document.getElementById('createJobForm');
 const editJobIdInput = document.getElementById('editJobId');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 const formMessage = document.getElementById('formMessage');
+const stateSelect = document.getElementById('regState');
+const citySelect = document.getElementById('regCity');
+
+const citiesByState = {
+    AC: ['Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira'],
+    AL: ['Maceió', 'Arapiraca', 'Palmeira dos Índios'],
+    AP: ['Macapá', 'Santana', 'Laranjal do Jari'],
+    AM: ['Manaus', 'Parintins', 'Itacoatiara'],
+    BA: ['Salvador', 'Feira de Santana', 'Vitória da Conquista'],
+    CE: ['Fortaleza', 'Juazeiro do Norte', 'Sobral'],
+    DF: ['Brasília'],
+    ES: ['Vitória', 'Vila Velha', 'Serra'],
+    GO: ['Goiânia', 'Aparecida de Goiânia', 'Anápolis'],
+    MA: ['São Luís', 'Imperatriz', 'Caxias'],
+    MT: ['Cuiabá', 'Várzea Grande', 'Rondonópolis'],
+    MS: ['Campo Grande', 'Dourados', 'Três Lagoas'],
+    MG: ['Belo Horizonte', 'Uberlândia', 'Juiz de Fora'],
+    PA: ['Belém', 'Ananindeua', 'Santarém'],
+    PB: ['João Pessoa', 'Campina Grande', 'Santa Rita'],
+    PR: ['Curitiba', 'Londrina', 'Maringá'],
+    PE: ['Recife', 'Jaboatão dos Guararapes', 'Olinda'],
+    PI: ['Teresina', 'Parnaíba', 'Picos'],
+    RJ: ['Rio de Janeiro', 'Niterói', 'Nova Iguaçu'],
+    RN: ['Natal', 'Mossoró', 'Parnamirim'],
+    RS: ['Porto Alegre', 'Caxias do Sul', 'Pelotas'],
+    RO: ['Porto Velho', 'Ji-Paraná', 'Ariquemes'],
+    RR: ['Boa Vista', 'Pacaraima', 'Rorainópolis'],
+    SC: ['Florianópolis', 'Joinville', 'Blumenau'],
+    SP: ['São Paulo', 'Campinas', 'Santos'],
+    SE: ['Aracaju', 'Nossa Senhora do Socorro', 'Lagarto'],
+    TO: ['Palmas', 'Araguaína', 'Gurupi']
+};
+
+function populateCityOptions(state, selectedCity = '') {
+    citySelect.innerHTML = '';
+    if (!state || !citiesByState[state]) {
+        citySelect.disabled = true;
+        citySelect.innerHTML = '<option value="" disabled selected>Selecione primeiro a UF</option>';
+        return;
+    }
+
+    citySelect.disabled = false;
+    citySelect.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
+    citiesByState[state].forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        if (city === selectedCity) {
+            option.selected = true;
+        }
+        citySelect.appendChild(option);
+    });
+}
+
+stateSelect.addEventListener('change', () => {
+    populateCityOptions(stateSelect.value);
+});
 
 cancelEditBtn.style.display = 'none';
 
@@ -60,11 +117,14 @@ function clearFormMessage() {
 }
 
 function buildJobPayload() {
+    const state = document.getElementById('regState').value;
+    const city = document.getElementById('regCity').value;
+
     return {
         title: document.getElementById('regTitle').value.trim(),
         company: document.getElementById('regCompany').value.trim(),
         email: document.getElementById('regEmail').value.trim(),
-        location: document.getElementById('regCity').value.trim(),
+        location: city && state ? `${city} - ${state}` : '',
         salary: `R$ ${document.getElementById('regSalary').value.trim()},00`,
         target: document.getElementById('regTarget').value,
         desc: document.getElementById('regDesc').value.trim(),
@@ -81,6 +141,14 @@ function validateJobPayload(payload) {
         if (!payload[field] || payload[field].toString().trim() === '') {
             return `O campo ${field} é obrigatório.`;
         }
+    }
+
+    if (!document.getElementById('regState').value) {
+        return 'Selecione a UF para continuar.';
+    }
+
+    if (!document.getElementById('regCity').value) {
+        return 'Selecione a cidade para continuar.';
     }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -108,7 +176,12 @@ function populateJobForm(job) {
     document.getElementById('regTitle').value = job.title || '';
     document.getElementById('regCompany').value = job.company || '';
     document.getElementById('regEmail').value = job.email || '';
-    document.getElementById('regCity').value = job.location || '';
+
+    const [city = '', state = ''] = String(job.location || '').split(' - ');
+    document.getElementById('regState').value = state;
+    populateCityOptions(state, city);
+    document.getElementById('regCity').value = city || '';
+
     document.getElementById('regSalary').value = String(job.salary).replace(/[^0-9]/g, '') || '';
     document.getElementById('regTarget').value = job.target || 'Informática';
     document.getElementById('regDesc').value = job.desc || '';

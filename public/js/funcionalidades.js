@@ -1,3 +1,6 @@
+let profileData = null;
+let notificationsList = [];
+
 async function carregarVagas() {
     try {
         const resposta = await fetch('/api/vagas');
@@ -19,27 +22,6 @@ async function carregarVagas() {
     }
 }
 
-const notifications = [
-    {
-        id: 1,
-        title: 'Nova vaga recomendada',
-        message: 'Uma oportunidade em Informática acaba de ser publicada.',
-        time: 'Há 1 hora'
-    },
-    {
-        id: 2,
-        title: 'Recado do campus',
-        message: 'Atualize seu perfil para receber vagas mais relevantes.',
-        time: 'Ontem'
-    },
-    {
-        id: 3,
-        title: 'Alerta de inscrição',
-        message: 'Prazo final para inscrição em vaga de Mecânica: amanhã.',
-        time: 'Há 2 dias'
-    }
-];
-
 function switchView(viewName) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
     document.querySelectorAll('nav a').forEach(el => el.classList.remove('active'));
@@ -54,11 +36,65 @@ function switchView(viewName) {
     } else if (viewName === 'notifications') {
         document.getElementById('view-notifications-container').classList.add('active-view');
         document.getElementById('nav-notifications').classList.add('active');
-        renderNotifications();
+        fetchNotifications().then(() => renderNotifications());
     } else if (viewName === 'profile') {
         document.getElementById('view-profile-container').classList.add('active-view');
         document.getElementById('nav-perfil').classList.add('active');
-        renderProfile();
+        fetchProfile().then(data => {
+            if (data) fillProfileForm(data);
+            renderProfile();
+        });
+    }
+}
+
+async function fetchProfile() {
+    try {
+        const response = await fetch('/api/perfil');
+        if (!response.ok) throw new Error('Erro ao carregar perfil');
+        const result = await response.json();
+        if (result.sucesso && result.dados) {
+            profileData = result.dados;
+            return profileData;
+        }
+        return null;
+    } catch (erro) {
+        console.error(erro);
+        return null;
+    }
+}
+
+async function fetchNotifications() {
+    try {
+        const response = await fetch('/api/notificacoes');
+        if (!response.ok) throw new Error('Erro ao carregar notificações');
+        const result = await response.json();
+        if (result.sucesso && result.dados) {
+            notificationsList = result.dados;
+            return notificationsList;
+        }
+        return [];
+    } catch (erro) {
+        console.error(erro);
+        return [];
+    }
+}
+
+async function saveProfile(profile) {
+    try {
+        const response = await fetch('/api/perfil', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profile)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.erro || 'Erro ao salvar perfil');
+        }
+        profileData = result.dados;
+        return profileData;
+    } catch (erro) {
+        console.error(erro);
+        throw erro;
     }
 }
 
@@ -126,12 +162,14 @@ function renderNotifications() {
     const listContainer = document.getElementById('notification-list');
     if (!listContainer) return;
 
-    if (notifications.length === 0) {
+    const notificationsToShow = notificationsList.length > 0 ? notificationsList : [];
+
+    if (notificationsToShow.length === 0) {
         listContainer.innerHTML = '<p class="notification-empty">Nenhuma notificação disponível.</p>';
         return;
     }
 
-    listContainer.innerHTML = notifications.map(notification => `
+    listContainer.innerHTML = notificationsToShow.map(notification => `
         <div class="notification-card">
             <div class="notification-header">
                 <strong>${notification.title}</strong>
@@ -143,10 +181,78 @@ function renderNotifications() {
 }
 
 function renderProfile() {
+    if (!profileData) {
+        fetchProfile().then(data => {
+            if (!data) return;
+            profileData = data;
+            fillProfileForm(data);
+        });
+    } else {
+        fillProfileForm(profileData);
+    }
+
     const savedCountEl = document.getElementById('saved-jobs-count');
     if (savedCountEl) {
         savedCountEl.textContent = savedJobs.length;
     }
+}
+
+function fillProfileForm(profile) {
+    document.getElementById('profileName').value = profile.name || '';
+    document.getElementById('profileEmail').value = profile.email || '';
+    document.getElementById('profileCourse').value = profile.course || '';
+    document.getElementById('profileCampus').value = profile.campus || '';
+    document.getElementById('profileStatus').value = profile.status || '';
+    document.getElementById('profileAvailability').value = profile.availability || '';
+}
+
+function setProfileMessage(message, isError = true) {
+    const profileMessage = document.getElementById('profileMessage');
+    if (!profileMessage) return;
+    profileMessage.textContent = message;
+    profileMessage.style.color = isError ? '#b00020' : '#1f8a3d';
+}
+
+function clearProfileMessage() {
+    const profileMessage = document.getElementById('profileMessage');
+    if (!profileMessage) return;
+    profileMessage.textContent = '';
+}
+
+async function handleSaveProfile() {
+    const profile = {
+        name: document.getElementById('profileName').value.trim(),
+        email: document.getElementById('profileEmail').value.trim(),
+        course: document.getElementById('profileCourse').value.trim(),
+        campus: document.getElementById('profileCampus').value.trim(),
+        status: document.getElementById('profileStatus').value.trim(),
+        availability: document.getElementById('profileAvailability').value.trim()
+    };
+
+    try {
+        const saved = await saveProfile(profile);
+        setProfileMessage('Perfil salvo com sucesso.', false);
+        fillProfileForm(saved);
+    } catch (erro) {
+        setProfileMessage(erro.message || 'Não foi possível salvar o perfil.');
+    }
+}
+
+function handleCancelProfile() {
+    if (profileData) {
+        fillProfileForm(profileData);
+    }
+    clearProfileMessage();
+}
+
+const saveProfileBtn = document.getElementById('saveProfileBtn');
+const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+
+if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', handleSaveProfile);
+}
+if (cancelProfileBtn) {
+    cancelProfileBtn.addEventListener('click', handleCancelProfile);
 }
 
 function renderJobs() {
