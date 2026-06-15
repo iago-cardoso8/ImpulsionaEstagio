@@ -19,6 +19,27 @@ async function carregarVagas() {
     }
 }
 
+const notifications = [
+    {
+        id: 1,
+        title: 'Nova vaga recomendada',
+        message: 'Uma oportunidade em Informática acaba de ser publicada.',
+        time: 'Há 1 hora'
+    },
+    {
+        id: 2,
+        title: 'Recado do campus',
+        message: 'Atualize seu perfil para receber vagas mais relevantes.',
+        time: 'Ontem'
+    },
+    {
+        id: 3,
+        title: 'Alerta de inscrição',
+        message: 'Prazo final para inscrição em vaga de Mecânica: amanhã.',
+        time: 'Há 2 dias'
+    }
+];
+
 function switchView(viewName) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
     document.querySelectorAll('nav a').forEach(el => el.classList.remove('active'));
@@ -27,9 +48,17 @@ function switchView(viewName) {
         document.getElementById('view-jobs-container').classList.add('active-view');
         document.getElementById('nav-vagas').classList.add('active');
         carregarVagas();
-    } else {
+    } else if (viewName === 'register') {
         document.getElementById('view-register-container').classList.add('active-view');
         document.getElementById('nav-cadastro').classList.add('active');
+    } else if (viewName === 'notifications') {
+        document.getElementById('view-notifications-container').classList.add('active-view');
+        document.getElementById('nav-notifications').classList.add('active');
+        renderNotifications();
+    } else if (viewName === 'profile') {
+        document.getElementById('view-profile-container').classList.add('active-view');
+        document.getElementById('nav-perfil').classList.add('active');
+        renderProfile();
     }
 }
 
@@ -91,6 +120,33 @@ function toggleSave(jobId) {
     renderJobs();
     const job = jobs.find(j => j.id === jobId);
     if (job) showDetails(job);
+}
+
+function renderNotifications() {
+    const listContainer = document.getElementById('notification-list');
+    if (!listContainer) return;
+
+    if (notifications.length === 0) {
+        listContainer.innerHTML = '<p class="notification-empty">Nenhuma notificação disponível.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = notifications.map(notification => `
+        <div class="notification-card">
+            <div class="notification-header">
+                <strong>${notification.title}</strong>
+                <span>${notification.time}</span>
+            </div>
+            <p>${notification.message}</p>
+        </div>
+    `).join('');
+}
+
+function renderProfile() {
+    const savedCountEl = document.getElementById('saved-jobs-count');
+    if (savedCountEl) {
+        savedCountEl.textContent = savedJobs.length;
+    }
 }
 
 function renderJobs() {
