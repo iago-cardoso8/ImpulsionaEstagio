@@ -46,7 +46,8 @@ const editJobIdInput = document.getElementById('editJobId');
 const cancelEditBtn = document.getElementById('cancelEditBtn');
 const formMessage = document.getElementById('formMessage');
 const stateSelect = document.getElementById('regState');
-const citySelect = document.getElementById('regCity');
+const cityInput = document.getElementById('regCity');
+const cityDataList = document.getElementById('regCityList');
 
 const citiesByState = {
     AC: ['Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira'],
@@ -78,25 +79,40 @@ const citiesByState = {
     TO: ['Palmas', 'Araguaína', 'Gurupi']
 };
 
-function populateCityOptions(state, selectedCity = '') {
-    citySelect.innerHTML = '';
-    if (!state || !citiesByState[state]) {
-        citySelect.disabled = true;
-        citySelect.innerHTML = '<option value="" disabled selected>Selecione primeiro a UF</option>';
+async function populateCityOptions(state, selectedCity = '') {
+    cityDataList.innerHTML = '';
+    cityInput.value = '';
+    if (!state) {
+        cityInput.disabled = true;
+        cityInput.placeholder = 'Selecione primeiro a UF';
         return;
     }
 
-    citySelect.disabled = false;
-    citySelect.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
-    citiesByState[state].forEach(city => {
-        const option = document.createElement('option');
-        option.value = city;
-        option.textContent = city;
-        if (city === selectedCity) {
-            option.selected = true;
+    // Load IF campi JSON once and cache in window
+    if (!window.__ifCampiByUF) {
+        try {
+            const resp = await fetch('/js/if_campi_by_uf.json');
+            window.__ifCampiByUF = resp.ok ? await resp.json() : {};
+        } catch (e) {
+            window.__ifCampiByUF = {};
         }
-        citySelect.appendChild(option);
+    }
+
+    const cities = (citiesByState[state] || []).slice();
+    if (window.__ifCampiByUF[state]) {
+        window.__ifCampiByUF[state].forEach(c => { if (!cities.includes(c)) cities.push(c); });
+    }
+
+    cities.sort();
+    cities.forEach(city => {
+        const opt = document.createElement('option');
+        opt.value = city;
+        cityDataList.appendChild(opt);
     });
+
+    cityInput.disabled = false;
+    cityInput.placeholder = 'Escolha ou digite a cidade';
+    if (selectedCity) cityInput.value = selectedCity;
 }
 
 stateSelect.addEventListener('change', () => {

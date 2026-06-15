@@ -7,7 +7,7 @@
 const db = require('./database');
 const { runMigration } = require('./migration');
 const { runSeeders } = require('./seeders');
-
+src/controllers
 /**
  * Inicializa o banco de dados completamente
  * Executa migrations e seeders
