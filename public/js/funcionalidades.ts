@@ -125,35 +125,38 @@ function showDetails(job: Job) {
     const jobDetails = getElement<HTMLElement>('job-details');
     if (!jobDetails) return;
     jobDetails.innerHTML = `
-    <div style="border-bottom:1px solid #eee; padding-bottom:20px;">
-      <h2 style="margin:0; color:#333">${job.title}</h2>
-      <h4 style="margin:5px 0; color:#666">${job.company}</h4>
-      <p>${job.location} | <strong>${job.salary}</strong></p>
-      <p style="margin:4px 0 0; color:#555">E-mail: ${job.email || 'Não informado'}</p>
-      <div class="tags">
-         <span class="tag">${job.target}</span>
-         <span class="tag">${job.type}</span>
+    <div class="detail-card">
+      <div class="detail-header">
+        <div>
+          <p class="detail-eyebrow">Oportunidade disponível</p>
+          <h2>${job.title}</h2>
+          <h4>${job.company}</h4>
+          <p class="detail-meta">${job.location} · <strong>${job.salary}</strong></p>
+          <p class="detail-email">E-mail: ${job.email || 'Não informado'}</p>
+        </div>
+        <div class="detail-actions">
+          <button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
+          <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>
+          <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
+            ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
+          </button>
+        </div>
       </div>
-      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
-        <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>
-        <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
-          ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
-        </button>
-      </div>
-    </div>
-    <div style="margin-top:20px">
-      <div class="info-block">
-         <h4>Sobre a Vaga</h4>
-         <p style="color:#555; line-height:1.6">${job.desc}</p>
-      </div>
-      <div class="info-block">
-         <h4>Requisitos</h4>
-         <ul>${reqList}</ul>
+      <div class="detail-badges">
+        <span class="tag">${job.target}</span>
+        <span class="tag">${job.type}</span>
       </div>
       <div class="info-block">
-         <h4>Benefícios</h4>
-         <ul>${benList}</ul>
+        <h4>Sobre a Vaga</h4>
+        <p style="color:#555; line-height:1.6; margin:0">${job.desc}</p>
+      </div>
+      <div class="info-block">
+        <h4>Requisitos</h4>
+        <ul>${reqList}</ul>
+      </div>
+      <div class="info-block">
+        <h4>Benefícios</h4>
+        <ul>${benList}</ul>
       </div>
     </div>
   `;
@@ -314,6 +317,18 @@ function renderJobs() {
         return matchesSearch && matchCidade && matchCurso && matchEmpresa && matchRemun && matchData;
     });
 
+    if (filtered.length === 0) {
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <h4>Nenhuma vaga encontrada</h4>
+                <p>Tente ajustar os filtros ou buscar por outro termo.</p>
+            </div>
+        `;
+        const countLabel = getElement<HTMLElement>('count-label');
+        if (countLabel) countLabel.innerText = '0 vagas encontradas';
+        return;
+    }
+
     filtered.forEach(job => {
         const isSaved = savedJobs.includes(job.id);
         const card = document.createElement("div");
@@ -324,14 +339,14 @@ function renderJobs() {
 
         card.innerHTML = `
       <img src="${avatarUrl}" alt="Logo">
-      <div class="job-card-info" style="flex:1">
-        <div style="display:flex; justify-content:space-between">
+      <div class="job-card-info">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <h4>${job.title}</h4>
-            ${isSaved ? '<span style="color:#e91e63">♥</span>' : ''}
+            ${isSaved ? '<span style="color:#e91e63; font-size:1.1rem;">♥</span>' : ''}
         </div>
         <p><strong>${job.company}</strong></p>
         <p>${job.location}</p>
-        <small style="color: green">${job.time}</small>
+        <small style="color:#2d9669; font-weight:600">${job.time}</small>
       </div>
     `;
 
