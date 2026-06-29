@@ -1,14 +1,27 @@
-const express = require('express');
-const router = express.Router();
-const VagasModel = require('../models/vagasModel');
+import express, { Router, Request, Response } from 'express';
+import * as VagasModel from '../models/vagasModel';
+
+const router: Router = express.Router();
+
+// ────────────────────────────────────────────────────────────
+// Type Definitions
+// ────────────────────────────────────────────────────────────
+
+interface ValidationError {
+    status: number;
+    erro: string;
+    campo?: string;
+    camposRequeridos?: string[];
+    camposFaltantes?: string[];
+}
 
 // ────────────────────────────────────────────────────────────
 // VALIDAÇÕES
 // ────────────────────────────────────────────────────────────
 
-function validarCamposObrigatorios(data) {
+function validarCamposObrigatorios(data: any): ValidationError | null {
     const camposObrigatorios = ['title', 'company', 'location', 'salary', 'target', 'email'];
-    const faltantes = camposObrigatorios.filter(campo => !data[campo] || data[campo].toString().trim() === '');
+    const faltantes = camposObrigatorios.filter(campo => !data[campo] || String(data[campo]).trim() === '');
     
     if (faltantes.length > 0) {
         return {
@@ -21,9 +34,10 @@ function validarCamposObrigatorios(data) {
     return null;
 }
 
-function validarEmail(email) {
+function validarEmail(email: string | string[] | undefined): ValidationError | null {
+    const emailStr = String(email || '');
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!regex.test(email)) {
+    if (!regex.test(emailStr)) {
         return {
             status: 400,
             erro: 'E-mail em formato inválido',
@@ -33,8 +47,9 @@ function validarEmail(email) {
     return null;
 }
 
-function validarSalary(salary) {
-    const valor = Number(String(salary).replace(/[^0-9.,]/g, '').replace(',', '.'));
+function validarSalary(salary: any): ValidationError | null {
+    const salaryStr = String(salary || '');
+    const valor = Number(salaryStr.replace(/[^0-9.,]/g, '').replace(',', '.'));
     if (Number.isNaN(valor) || valor <= 0) {
         return {
             status: 400,
@@ -45,8 +60,9 @@ function validarSalary(salary) {
     return null;
 }
 
-function validarId(id) {
-    const idNum = parseInt(id);
+function validarId(id: string | string[] | undefined): ValidationError | null {
+    const idStr = String(id || '');
+    const idNum = parseInt(idStr, 10);
     if (isNaN(idNum) || idNum <= 0) {
         return {
             status: 400,
@@ -60,7 +76,7 @@ function validarId(id) {
 // ROTAS - READ (GET)
 // ────────────────────────────────────────────────────────────
 
-router.get('/', (req, res) => {
+router.get('/', (req: Request, res: Response): void => {
     try {
         const vagas = VagasModel.findAll();
         res.status(200).json({
@@ -68,7 +84,7 @@ router.get('/', (req, res) => {
             quantidade: vagas.length,
             dados: vagas
         });
-    } catch (erro) {
+    } catch (erro: any) {
         console.error('Erro ao listar vagas:', erro.message);
         res.status(500).json({
             sucesso: false,
@@ -77,28 +93,30 @@ router.get('/', (req, res) => {
     }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', (req: Request, res: Response): void => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
-            return res.status(erroId.status).json(erroId);
+            res.status(erroId.status).json(erroId);
+            return;
         }
 
-        const vaga = VagasModel.findById(parseInt(req.params.id));
+        const vaga = VagasModel.findById(parseInt(req.params.id as string, 10));
 
         if (!vaga) {
-            return res.status(404).json({
+            res.status(404).json({
                 sucesso: false,
                 erro: 'Vaga não encontrada',
-                id: parseInt(req.params.id)
+                id: parseInt(req.params.id as string, 10)
             });
+            return;
         }
 
         res.status(200).json({
             sucesso: true,
             dados: vaga
         });
-    } catch (erro) {
+    } catch (erro: any) {
         console.error('Erro ao buscar vaga:', erro.message);
         res.status(500).json({
             sucesso: false,
@@ -111,11 +129,12 @@ router.get('/:id', (req, res) => {
 // ROTAS - CREATE (POST)
 // ────────────────────────────────────────────────────────────
 
-router.post('/', (req, res) => {
+router.post('/', (req: Request, res: Response): void => {
     try {
-        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email) || validarSalary(req.body.salary);
+        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email as string) || validarSalary(req.body.salary as string);
         if (erroValidacao) {
-            return res.status(erroValidacao.status).json(erroValidacao);
+            res.status(erroValidacao.status).json(erroValidacao);
+            return;
         }
 
         const novaVaga = VagasModel.create(req.body);
@@ -125,7 +144,7 @@ router.post('/', (req, res) => {
             mensagem: 'Vaga criada com sucesso',
             dados: novaVaga
         });
-    } catch (erro) {
+    } catch (erro: any) {
         console.error('Erro ao criar vaga:', erro.message);
         res.status(500).json({
             sucesso: false,
@@ -138,27 +157,30 @@ router.post('/', (req, res) => {
 // ROTAS - UPDATE (PUT)
 // ────────────────────────────────────────────────────────────
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req: Request, res: Response): void => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
-            return res.status(erroId.status).json(erroId);
+            res.status(erroId.status).json(erroId);
+            return;
         }
 
-        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email) || validarSalary(req.body.salary);
+        const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email as string) || validarSalary(req.body.salary as string);
         if (erroValidacao) {
-            return res.status(erroValidacao.status).json(erroValidacao);
+            res.status(erroValidacao.status).json(erroValidacao);
+            return;
         }
 
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id as string, 10);
 
         const vagaExistente = VagasModel.findById(id);
         if (!vagaExistente) {
-            return res.status(404).json({
+            res.status(404).json({
                 sucesso: false,
                 erro: 'Vaga não encontrada',
                 id: id
             });
+            return;
         }
 
         const vagaAtualizada = VagasModel.update(id, req.body);
@@ -168,7 +190,7 @@ router.put('/:id', (req, res) => {
             mensagem: 'Vaga atualizada com sucesso',
             dados: vagaAtualizada
         });
-    } catch (erro) {
+    } catch (erro: any) {
         console.error('Erro ao atualizar vaga:', erro.message);
         res.status(500).json({
             sucesso: false,
@@ -181,23 +203,25 @@ router.put('/:id', (req, res) => {
 // ROTAS - DELETE
 // ────────────────────────────────────────────────────────────
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', (req: Request, res: Response): void => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
-            return res.status(erroId.status).json(erroId);
+            res.status(erroId.status).json(erroId);
+            return;
         }
 
-        const id = parseInt(req.params.id);
+        const id = parseInt(req.params.id as string, 10);
 
         const vagaRemovida = VagasModel.remove(id);
 
         if (!vagaRemovida) {
-            return res.status(404).json({
+            res.status(404).json({
                 sucesso: false,
                 erro: 'Vaga não encontrada',
                 id: id
             });
+            return;
         }
 
         res.status(200).json({
@@ -205,7 +229,7 @@ router.delete('/:id', (req, res) => {
             mensagem: 'Vaga removida com sucesso',
             dados: vagaRemovida
         });
-    } catch (erro) {
+    } catch (erro: any) {
         console.error('Erro ao remover vaga:', erro.message);
         res.status(500).json({
             sucesso: false,
@@ -214,4 +238,4 @@ router.delete('/:id', (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

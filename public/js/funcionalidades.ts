@@ -1,45 +1,56 @@
-let profileData = null;
-let notificationsList = [];
+let profileData: Profile | null = null;
+let notificationsList: NotificationItem[] = [];
 
 async function carregarVagas() {
     try {
         const resposta = await fetch('/api/vagas');
         if (!resposta.ok) throw new Error('Erro ao carregar vagas');
-        const resultado = await resposta.json();
+        const resultado = await resposta.json() as ApiResponse<Job[]>;
         
         // A API retorna { sucesso: true, quantidade: X, dados: [...] }
         if (resultado.sucesso && resultado.dados) {
             jobs = resultado.dados;
             console.log(`✅ ${jobs.length} vagas carregadas`);
         } else {
+            jobs = [];
             throw new Error('Resposta inválida da API');
         }
         
         renderJobs();
     } catch (erro) {
         console.error('❌ Erro ao carregar vagas:', erro);
-        document.getElementById('count-label').innerText = 'Erro ao carregar vagas';
+        const countLabel = getElement<HTMLElement>('count-label');
+        if (countLabel) countLabel.innerText = 'Erro ao carregar vagas';
     }
 }
 
-function switchView(viewName) {
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
-    document.querySelectorAll('nav a').forEach(el => el.classList.remove('active'));
+function switchView(viewName: string) {
+    document.querySelectorAll<HTMLElement>('.view-section').forEach(el => el.classList.remove('active-view'));
+    document.querySelectorAll<HTMLElement>('nav a').forEach(el => el.classList.remove('active'));
+
+    const viewJobsContainer = getElement<HTMLElement>('view-jobs-container');
+    const navVagas = getElement<HTMLElement>('nav-vagas');
+    const viewRegisterContainer = getElement<HTMLElement>('view-register-container');
+    const navCadastro = getElement<HTMLElement>('nav-cadastro');
+    const viewNotificationsContainer = getElement<HTMLElement>('view-notifications-container');
+    const navNotifications = getElement<HTMLElement>('nav-notifications');
+    const viewProfileContainer = getElement<HTMLElement>('view-profile-container');
+    const navPerfil = getElement<HTMLElement>('nav-perfil');
 
     if (viewName === 'jobs') {
-        document.getElementById('view-jobs-container').classList.add('active-view');
-        document.getElementById('nav-vagas').classList.add('active');
+        viewJobsContainer?.classList.add('active-view');
+        navVagas?.classList.add('active');
         carregarVagas();
     } else if (viewName === 'register') {
-        document.getElementById('view-register-container').classList.add('active-view');
-        document.getElementById('nav-cadastro').classList.add('active');
+        viewRegisterContainer?.classList.add('active-view');
+        navCadastro?.classList.add('active');
     } else if (viewName === 'notifications') {
-        document.getElementById('view-notifications-container').classList.add('active-view');
-        document.getElementById('nav-notifications').classList.add('active');
+        viewNotificationsContainer?.classList.add('active-view');
+        navNotifications?.classList.add('active');
         fetchNotifications().then(() => renderNotifications());
     } else if (viewName === 'profile') {
-        document.getElementById('view-profile-container').classList.add('active-view');
-        document.getElementById('nav-perfil').classList.add('active');
+        viewProfileContainer?.classList.add('active-view');
+        navPerfil?.classList.add('active');
         fetchProfile().then(data => {
             if (data) fillProfileForm(data);
             renderProfile();
@@ -47,11 +58,11 @@ function switchView(viewName) {
     }
 }
 
-async function fetchProfile() {
+async function fetchProfile(): Promise<Profile | null> {
     try {
         const response = await fetch('/api/perfil');
         if (!response.ok) throw new Error('Erro ao carregar perfil');
-        const result = await response.json();
+        const result = await response.json() as ApiResponse<Profile>;
         if (result.sucesso && result.dados) {
             profileData = result.dados;
             return profileData;
@@ -63,11 +74,11 @@ async function fetchProfile() {
     }
 }
 
-async function fetchNotifications() {
+async function fetchNotifications(): Promise<NotificationItem[]> {
     try {
         const response = await fetch('/api/notificacoes');
         if (!response.ok) throw new Error('Erro ao carregar notificações');
-        const result = await response.json();
+        const result = await response.json() as ApiResponse<NotificationItem[]>;
         if (result.sucesso && result.dados) {
             notificationsList = result.dados;
             return notificationsList;
@@ -79,19 +90,19 @@ async function fetchNotifications() {
     }
 }
 
-async function saveProfile(profile) {
+async function saveProfile(profile: Profile): Promise<Profile> {
     try {
         const response = await fetch('/api/perfil', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profile)
         });
-        const result = await response.json();
+        const result = await response.json() as ApiResponse<Profile>;
         if (!response.ok) {
             throw new Error(result.erro || 'Erro ao salvar perfil');
         }
-        profileData = result.dados;
-        return profileData;
+        profileData = result.dados ?? null;
+        return profileData as Profile;
     } catch (erro) {
         console.error(erro);
         throw erro;
@@ -102,16 +113,18 @@ function handleSearch() {
     renderJobs();
 }
 
-function showDetails(job) {
+function showDetails(job: Job) {
     const isSaved = savedJobs.includes(job.id);
     const reqList = Array.isArray(job.requirements)
-        ? job.requirements.map(r => `<li>${r}</li>`).join("")
+        ? job.requirements.map((r: string) => `<li>${r}</li>`).join("")
         : `<li>${job.requirements}</li>`;
     const benList = Array.isArray(job.benefits)
-        ? job.benefits.map(b => `<li>${b}</li>`).join("")
+        ? job.benefits.map((b: string) => `<li>${b}</li>`).join("")
         : job.benefits ? `<li>${job.benefits}</li>` : '<li>Nenhum benefício listado</li>';
 
-    document.getElementById("job-details").innerHTML = `
+    const jobDetails = getElement<HTMLElement>('job-details');
+    if (!jobDetails) return;
+    jobDetails.innerHTML = `
     <div style="border-bottom:1px solid #eee; padding-bottom:20px;">
       <h2 style="margin:0; color:#333">${job.title}</h2>
       <h4 style="margin:5px 0; color:#666">${job.company}</h4>
@@ -146,7 +159,7 @@ function showDetails(job) {
   `;
 }
 
-function toggleSave(jobId) {
+function toggleSave(jobId: number) {
     if (savedJobs.includes(jobId)) {
         savedJobs = savedJobs.filter(id => id !== jobId);
     } else {
@@ -187,46 +200,46 @@ function renderProfile() {
             profileData = data;
             fillProfileForm(data);
         });
-    } else {
+    } else if (profileData) {
         fillProfileForm(profileData);
     }
 
-    const savedCountEl = document.getElementById('saved-jobs-count');
+    const savedCountEl = getElement<HTMLElement>('saved-jobs-count');
     if (savedCountEl) {
-        savedCountEl.textContent = savedJobs.length;
+        savedCountEl.textContent = String(savedJobs.length);
     }
 }
 
-function fillProfileForm(profile) {
-    document.getElementById('profileName').value = profile.name || '';
-    document.getElementById('profileEmail').value = profile.email || '';
-    document.getElementById('profileCourse').value = profile.course || '';
-    document.getElementById('profileCampus').value = profile.campus || '';
-    document.getElementById('profileStatus').value = profile.status || '';
-    document.getElementById('profileAvailability').value = profile.availability || '';
+function fillProfileForm(profile: Profile) {
+    getInputElement('profileName')!.value = profile.name || '';
+    getInputElement('profileEmail')!.value = profile.email || '';
+    getInputElement('profileCourse')!.value = profile.course || '';
+    getInputElement('profileCampus')!.value = profile.campus || '';
+    getInputElement('profileStatus')!.value = profile.status || '';
+    getInputElement('profileAvailability')!.value = profile.availability || '';
 }
 
-function setProfileMessage(message, isError = true) {
-    const profileMessage = document.getElementById('profileMessage');
+function setProfileMessage(message: string, isError = true) {
+    const profileMessage = getElement<HTMLElement>('profileMessage');
     if (!profileMessage) return;
     profileMessage.textContent = message;
     profileMessage.style.color = isError ? '#b00020' : '#1f8a3d';
 }
 
 function clearProfileMessage() {
-    const profileMessage = document.getElementById('profileMessage');
+    const profileMessage = getElement<HTMLElement>('profileMessage');
     if (!profileMessage) return;
     profileMessage.textContent = '';
 }
 
 async function handleSaveProfile() {
-    const profile = {
-        name: document.getElementById('profileName').value.trim(),
-        email: document.getElementById('profileEmail').value.trim(),
-        course: document.getElementById('profileCourse').value.trim(),
-        campus: document.getElementById('profileCampus').value.trim(),
-        status: document.getElementById('profileStatus').value.trim(),
-        availability: document.getElementById('profileAvailability').value.trim()
+    const profile: Profile = {
+        name: getInputValue('profileName'),
+        email: getInputValue('profileEmail'),
+        course: getInputValue('profileCourse'),
+        campus: getInputValue('profileCampus'),
+        status: getInputValue('profileStatus'),
+        availability: getInputValue('profileAvailability')
     };
 
     try {
@@ -234,7 +247,8 @@ async function handleSaveProfile() {
         setProfileMessage('Perfil salvo com sucesso.', false);
         fillProfileForm(saved);
     } catch (erro) {
-        setProfileMessage(erro.message || 'Não foi possível salvar o perfil.');
+        const message = erro instanceof Error ? erro.message : String(erro);
+        setProfileMessage(message || 'Não foi possível salvar o perfil.');
     }
 }
 
@@ -256,15 +270,16 @@ if (cancelProfileBtn) {
 }
 
 function renderJobs() {
-    const listContainer = document.getElementById("job-list");
-    const searchText = document.getElementById("jobSearch").value.toLowerCase();
+    const listContainer = getElement<HTMLElement>('job-list');
+    const searchText = getInputValue('jobSearch').toLowerCase();
+    if (!listContainer) return;
     listContainer.innerHTML = "";
 
-    const cidadesMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="cidade"]:checked')).map(cb => cb.value);
-    const cursosMarcados = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="curso"]:checked')).map(cb => cb.value);
-    const empresasMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="empresa"]:checked')).map(cb => cb.value);
-    const remunMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="remuneracao"]:checked')).map(cb => cb.value);
-    const datasMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="data"]:checked')).map(cb => cb.value);
+    const cidadesMarcadas = Array.from(document.querySelectorAll<HTMLInputElement>('.cb-filtro[data-tipo="cidade"]:checked')).map(cb => cb.value);
+    const cursosMarcados = Array.from(document.querySelectorAll<HTMLInputElement>('.cb-filtro[data-tipo="curso"]:checked')).map(cb => cb.value);
+    const empresasMarcadas = Array.from(document.querySelectorAll<HTMLInputElement>('.cb-filtro[data-tipo="empresa"]:checked')).map(cb => cb.value);
+    const remunMarcadas = Array.from(document.querySelectorAll<HTMLInputElement>('.cb-filtro[data-tipo="remuneracao"]:checked')).map(cb => cb.value);
+    const datasMarcadas = Array.from(document.querySelectorAll<HTMLInputElement>('.cb-filtro[data-tipo="data"]:checked')).map(cb => cb.value);
 
     const filtered = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchText) ||
@@ -328,5 +343,6 @@ function renderJobs() {
         listContainer.appendChild(card);
     });
 
-    document.getElementById("count-label").innerText = `${filtered.length} vagas encontradas`;
+    const countLabel = getElement<HTMLElement>('count-label');
+    if (countLabel) countLabel.innerText = `${filtered.length} vagas encontradas`;
 }

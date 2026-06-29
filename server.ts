@@ -1,15 +1,15 @@
-const express = require('express');
-const path = require('path');
-const morgan = require('morgan');
+import express, { Express } from 'express';
+import path from 'path';
+import morgan from 'morgan';
 
-const { runMigration } = require('./src/database/migration');
-const { runSeeders }   = require('./src/database/seeders');
-const vagasController  = require('./src/controllers/vagasController');
-const profileController = require('./src/controllers/profileController');
-const notificationController = require('./src/controllers/notificationController');
+import { runMigration } from './src/database/migration';
+import { runSeeders } from './src/database/seeders';
+import vagasController from './src/controllers/vagasController';
+import profileController from './src/controllers/profileController';
+import notificationController from './src/controllers/notificationController';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app: Express = express();
+const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
 // ── Banco de dados ──────────────────────────────────────────────
 runMigration();

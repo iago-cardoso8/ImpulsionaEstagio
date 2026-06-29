@@ -1,20 +1,34 @@
+interface JobFormPayload {
+    title: string;
+    company: string;
+    email: string;
+    location: string;
+    salary: string;
+    target: string;
+    desc: string;
+    requirements: string[];
+    benefits: string[];
+    type: string;
+    time: string;
+}
+
 // Inicialização dos filtros dropdown
-const botoesGatilho = document.querySelectorAll('.btn-gatilho');
+const botoesGatilho = document.querySelectorAll<HTMLElement>('.btn-gatilho');
 
 botoesGatilho.forEach(botao => {
-    botao.addEventListener('click', (evento) => {
+    botao.addEventListener('click', (evento: MouseEvent) => {
         evento.stopPropagation();
 
         const idDoMenu = botao.getAttribute('data-alvo');
-        const menuDesejado = document.getElementById(idDoMenu);
+        const menuDesejado = idDoMenu ? getElement<HTMLElement>(idDoMenu) : null;
 
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        document.querySelectorAll<HTMLElement>('.dropdown-menu').forEach(menu => {
             if (menu.id !== idDoMenu) {
                 menu.classList.add('escondido');
             }
         });
 
-        menuDesejado.classList.toggle('escondido');
+        menuDesejado?.classList.toggle('escondido');
     });
 });
 
@@ -30,26 +44,26 @@ document.querySelectorAll('.dropdown-menu').forEach(menu => {
     });
 });
 
-const botoesAplicar = document.querySelectorAll('.btn-aplicar-filtro');
+const botoesAplicar = document.querySelectorAll<HTMLElement>('.btn-aplicar-filtro');
 
 botoesAplicar.forEach(botao => {
     botao.addEventListener('click', () => {
-        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        document.querySelectorAll<HTMLElement>('.dropdown-menu').forEach(menu => {
             menu.classList.add('escondido');
         });
         renderJobs();
     });
 });
 
-const form = document.getElementById('createJobForm');
-const editJobIdInput = document.getElementById('editJobId');
-const cancelEditBtn = document.getElementById('cancelEditBtn');
-const formMessage = document.getElementById('formMessage');
-const stateSelect = document.getElementById('regState');
-const cityInput = document.getElementById('regCity');
-const cityDataList = document.getElementById('regCityList');
+const form = getElement<HTMLFormElement>('createJobForm');
+const editJobIdInput = getInputElement('editJobId');
+const cancelEditBtn = getElement<HTMLButtonElement>('cancelEditBtn');
+const formMessage = getElement<HTMLElement>('formMessage');
+const stateSelect = getSelectElement('regState');
+const cityInput = getInputElement('regCity');
+const cityDataList = getDataListElement('regCityList');
 
-const citiesByState = {
+const citiesByState: Record<string, string[]> = {
     AC: ['Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira'],
     AL: ['Maceió', 'Arapiraca', 'Palmeira dos Índios'],
     AP: ['Macapá', 'Santana', 'Laranjal do Jari'],
@@ -79,7 +93,8 @@ const citiesByState = {
     TO: ['Palmas', 'Araguaína', 'Gurupi']
 };
 
-async function populateCityOptions(state, selectedCity = '') {
+async function populateCityOptions(state: string, selectedCity = '') {
+    if (!cityDataList || !cityInput) return;
     cityDataList.innerHTML = '';
     cityInput.value = '';
     if (!state) {
@@ -99,12 +114,12 @@ async function populateCityOptions(state, selectedCity = '') {
     }
 
     const cities = (citiesByState[state] || []).slice();
-    if (window.__ifCampiByUF[state]) {
-        window.__ifCampiByUF[state].forEach(c => { if (!cities.includes(c)) cities.push(c); });
+    if (window.__ifCampiByUF && window.__ifCampiByUF[state]) {
+        window.__ifCampiByUF[state].forEach((c: string) => { if (!cities.includes(c)) cities.push(c); });
     }
 
     cities.sort();
-    cities.forEach(city => {
+    cities.forEach((city: string) => {
         const opt = document.createElement('option');
         opt.value = city;
         cityDataList.appendChild(opt);
@@ -115,13 +130,13 @@ async function populateCityOptions(state, selectedCity = '') {
     if (selectedCity) cityInput.value = selectedCity;
 }
 
-stateSelect.addEventListener('change', () => {
-    populateCityOptions(stateSelect.value);
+stateSelect?.addEventListener('change', () => {
+    if (stateSelect) populateCityOptions(stateSelect.value);
 });
 
-cancelEditBtn.style.display = 'none';
+if (cancelEditBtn) cancelEditBtn.style.display = 'none';
 
-function setFormMessage(message, isError = true) {
+function setFormMessage(message: string, isError = true) {
     if (!formMessage) return;
     formMessage.textContent = message;
     formMessage.style.color = isError ? '#b00020' : '#1f8a3d';
@@ -132,38 +147,38 @@ function clearFormMessage() {
     formMessage.textContent = '';
 }
 
-function buildJobPayload() {
-    const state = document.getElementById('regState').value;
-    const city = document.getElementById('regCity').value;
+function buildJobPayload(): JobFormPayload {
+    const state = stateSelect?.value ?? '';
+    const city = cityInput?.value ?? '';
 
     return {
-        title: document.getElementById('regTitle').value.trim(),
-        company: document.getElementById('regCompany').value.trim(),
-        email: document.getElementById('regEmail').value.trim(),
+        title: getInputValue('regTitle'),
+        company: getInputValue('regCompany'),
+        email: getInputValue('regEmail'),
         location: city && state ? `${city} - ${state}` : '',
-        salary: `R$ ${document.getElementById('regSalary').value.trim()},00`,
-        target: document.getElementById('regTarget').value,
-        desc: document.getElementById('regDesc').value.trim(),
-        requirements: document.getElementById('regReq').value.split('\n').map(item => item.trim()).filter(item => item !== ''),
-        benefits: document.getElementById('regBenefits').value.split('\n').map(item => item.trim()).filter(item => item !== ''),
+        salary: `R$ ${getInputValue('regSalary')},00`,
+        target: (getElement<HTMLSelectElement>('regTarget')?.value ?? ''),
+        desc: getInputValue('regDesc'),
+        requirements: (getInputElement('regReq')?.value.split('\n').map(item => item.trim()).filter(item => item !== '') ?? []),
+        benefits: (getInputElement('regBenefits')?.value.split('\n').map(item => item.trim()).filter(item => item !== '') ?? []),
         type: 'Estágio',
         time: 'Agora mesmo'
     };
 }
 
-function validateJobPayload(payload) {
-    const required = ['title', 'company', 'email', 'location', 'salary', 'target'];
+function validateJobPayload(payload: JobFormPayload) {
+    const required: Array<keyof JobFormPayload> = ['title', 'company', 'email', 'location', 'salary', 'target'];
     for (const field of required) {
         if (!payload[field] || payload[field].toString().trim() === '') {
             return `O campo ${field} é obrigatório.`;
         }
     }
 
-    if (!document.getElementById('regState').value) {
+    if (!stateSelect?.value) {
         return 'Selecione a UF para continuar.';
     }
 
-    if (!document.getElementById('regCity').value) {
+    if (!cityInput?.value) {
         return 'Selecione a cidade para continuar.';
     }
 
@@ -181,34 +196,43 @@ function validateJobPayload(payload) {
 }
 
 function resetFormState() {
-    editJobIdInput.value = '';
-    cancelEditBtn.style.display = 'none';
-    form.querySelector('button[type="submit"]').textContent = 'Publicar Vaga';
+    if (editJobIdInput) editJobIdInput.value = '';
+    if (cancelEditBtn) cancelEditBtn.style.display = 'none';
+    if (form) {
+        const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (submitButton) submitButton.textContent = 'Publicar Vaga';
+    }
     clearFormMessage();
 }
 
-function populateJobForm(job) {
-    editJobIdInput.value = job.id;
-    document.getElementById('regTitle').value = job.title || '';
-    document.getElementById('regCompany').value = job.company || '';
-    document.getElementById('regEmail').value = job.email || '';
+function populateJobForm(job: Job) {
+    if (editJobIdInput) editJobIdInput.value = String(job.id);
+
+    getInputElement('regTitle')!.value = job.title || '';
+    getInputElement('regCompany')!.value = job.company || '';
+    getInputElement('regEmail')!.value = job.email || '';
 
     const [city = '', state = ''] = String(job.location || '').split(' - ');
-    document.getElementById('regState').value = state;
+    getSelectElement('regState')!.value = state;
     populateCityOptions(state, city);
-    document.getElementById('regCity').value = city || '';
+    getInputElement('regCity')!.value = city || '';
 
-    document.getElementById('regSalary').value = String(job.salary).replace(/[^0-9]/g, '') || '';
-    document.getElementById('regTarget').value = job.target || 'Informática';
-    document.getElementById('regDesc').value = job.desc || '';
-    document.getElementById('regReq').value = Array.isArray(job.requirements) ? job.requirements.join('\n') : job.requirements || '';
-    document.getElementById('regBenefits').value = Array.isArray(job.benefits) ? job.benefits.join('\n') : job.benefits || '';
-    form.querySelector('button[type="submit"]').textContent = 'Salvar Alterações';
-    cancelEditBtn.style.display = 'inline-block';
+    getInputElement('regSalary')!.value = String(job.salary).replace(/[^0-9]/g, '') || '';
+    getSelectElement('regTarget')!.value = job.target || 'Informática';
+    getInputElement('regDesc')!.value = job.desc || '';
+    getInputElement('regReq')!.value = Array.isArray(job.requirements) ? job.requirements.join('\n') : String(job.requirements || '');
+    getInputElement('regBenefits')!.value = Array.isArray(job.benefits) ? job.benefits.join('\n') : String(job.benefits || '');
+
+    if (form) {
+        const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (submitButton) submitButton.textContent = 'Salvar Alterações';
+    }
+
+    if (cancelEditBtn) cancelEditBtn.style.display = 'inline-block';
     clearFormMessage();
 }
 
-async function submitJobForm(event) {
+async function submitJobForm(event: Event) {
     event.preventDefault();
 
     const payload = buildJobPayload();
@@ -218,9 +242,9 @@ async function submitJobForm(event) {
         return;
     }
 
-    const isEditing = !!editJobIdInput.value;
+    const isEditing = !!editJobIdInput?.value;
     const method = isEditing ? 'PUT' : 'POST';
-    const url = isEditing ? `/api/vagas/${editJobIdInput.value}` : '/api/vagas';
+    const url = isEditing && editJobIdInput?.value ? `/api/vagas/${editJobIdInput.value}` : '/api/vagas';
 
     try {
         const response = await fetch(url, {
@@ -236,7 +260,7 @@ async function submitJobForm(event) {
         }
 
         setFormMessage(result.mensagem || 'Operação realizada com sucesso.', false);
-        form.reset();
+        form?.reset();
         resetFormState();
         await carregarVagas();
         switchView('jobs');
@@ -246,7 +270,7 @@ async function submitJobForm(event) {
     }
 }
 
-async function startJobEdit(id) {
+async function startJobEdit(id: number) {
     try {
         const job = await loadJobById(id);
         if (!job) {
@@ -261,7 +285,7 @@ async function startJobEdit(id) {
     }
 }
 
-async function deleteJob(id) {
+async function deleteJob(id: number) {
     if (!confirm('Tem certeza que deseja excluir esta vaga?')) {
         return;
     }
@@ -284,12 +308,12 @@ async function deleteJob(id) {
 }
 
 function cancelEdit() {
-    form.reset();
+    form?.reset();
     resetFormState();
 }
 
-form.addEventListener('submit', submitJobForm);
-cancelEditBtn.addEventListener('click', cancelEdit);
+form?.addEventListener('submit', submitJobForm);
+    cancelEditBtn?.addEventListener('click', cancelEdit);
 window.startJobEdit = startJobEdit;
 window.deleteJob = deleteJob;
 

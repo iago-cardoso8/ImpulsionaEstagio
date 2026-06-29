@@ -1,10 +1,34 @@
-const db = require('./database');
-const seedData = require('./seeders.json');
+import db from './database';
+import seedData from './seedData.json';
 
-function runSeeders() {
-    const countVagas = db.prepare('SELECT COUNT(*) as total FROM vagas').get();
-    const countPerfil = db.prepare('SELECT COUNT(*) as total FROM perfil').get();
-    const countNotifications = db.prepare('SELECT COUNT(*) as total FROM notifications').get();
+interface Vaga {
+    title: string;
+    company: string;
+    location: string;
+    email?: string;
+    time?: string;
+    type?: string;
+    salary?: string;
+    target: string;
+    desc?: string;
+    requirements?: string[];
+    benefits?: string[];
+}
+
+interface Notification {
+    title: string;
+    message: string;
+    time: string;
+}
+
+interface CountResult {
+    total: number;
+}
+
+function runSeeders(): void {
+    const countVagas: CountResult = db.prepare('SELECT COUNT(*) as total FROM vagas').get() as CountResult;
+    const countPerfil: CountResult = db.prepare('SELECT COUNT(*) as total FROM perfil').get() as CountResult;
+    const countNotifications: CountResult = db.prepare('SELECT COUNT(*) as total FROM notifications').get() as CountResult;
 
     if (countVagas.total === 0) {
         const insert = db.prepare(`
@@ -12,7 +36,7 @@ function runSeeders() {
             VALUES (@title, @company, @location, @email, @time, @type, @salary, @target, @desc, @requirements, @benefits)
         `);
 
-        const insertMany = db.transaction((vagas) => {
+        const insertMany = db.transaction((vagas: Vaga[]) => {
             for (const vaga of vagas) {
                 insert.run({
                     ...vaga,
@@ -23,7 +47,7 @@ function runSeeders() {
             }
         });
 
-        insertMany(seedData);
+        insertMany(seedData as Vaga[]);
         console.log(`✅ Seeders executados: ${seedData.length} vagas inseridas.`);
     } else {
         console.log('⚠️  Seeders de vagas ignorados: banco já possui dados.');
@@ -52,7 +76,7 @@ function runSeeders() {
             VALUES (@title, @message, @time)
         `);
 
-        const notifications = [
+        const notifications: Notification[] = [
             {
                 title: 'Nova vaga recomendada',
                 message: 'Uma oportunidade em Informática acaba de ser publicada.',
@@ -70,7 +94,7 @@ function runSeeders() {
             }
         ];
 
-        const insertManyNotifications = db.transaction((items) => {
+        const insertManyNotifications = db.transaction((items: Notification[]) => {
             for (const item of items) {
                 insertNotification.run(item);
             }
@@ -83,4 +107,4 @@ function runSeeders() {
     }
 }
 
-module.exports = { runSeeders };
+export { runSeeders };

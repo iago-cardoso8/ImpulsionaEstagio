@@ -1,14 +1,16 @@
-const db = require('./database');
+import db from './database';
 
-function addColumnIfMissing(table, column, definition) {
-    const columns = db.prepare(`PRAGMA table_info(${table})`).all().map(col => col.name);
-    if (!columns.includes(column)) {
+function addColumnIfMissing(table: string, column: string, definition: string): void {
+    const columns: Array<{ name: string }> = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+    const columnNames = columns.map(col => col.name);
+    
+    if (!columnNames.includes(column)) {
         db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`).run();
         console.log(`✅ Coluna adicionada: ${table}.${column}`);
     }
 }
 
-function runMigration() {
+function runMigration(): void {
     db.exec(`
         CREATE TABLE IF NOT EXISTS vagas (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,4 +77,4 @@ function runMigration() {
     console.log('✅ Migration executada: tabelas "vagas", "candidatos", "candidaturas", "perfil" e "notifications" prontas.');
 }
 
-module.exports = { runMigration };
+export { runMigration };

@@ -1,7 +1,22 @@
-const db = require('../database/database');
+import db from '../database/database';
 
-// Converte os campos JSON (requirements/benefits) de string para array
-function parseVaga(vaga) {
+export interface Vaga {
+    id?: number;
+    title: string;
+    company: string;
+    location: string;
+    email: string;
+    time?: string;
+    type?: string;
+    salary: string;
+    target: string;
+    desc?: string;
+    requirements: string[];
+    benefits: string[];
+    created_at?: string;
+}
+
+function parseVaga(vaga: any): Vaga | null {
     if (!vaga) return null;
     return {
         ...vaga,
@@ -10,17 +25,17 @@ function parseVaga(vaga) {
     };
 }
 
-function findAll() {
-    const rows = db.prepare('SELECT * FROM vagas').all();
-    return rows.map(parseVaga);
+function findAll(): Vaga[] {
+    const rows: any[] = db.prepare('SELECT * FROM vagas').all() as any[];
+    return rows.map(parseVaga).filter((v): v is Vaga => v !== null);
 }
 
-function findById(id) {
-    const row = db.prepare('SELECT * FROM vagas WHERE id = ?').get(id);
+function findById(id: number): Vaga | null {
+    const row: any = db.prepare('SELECT * FROM vagas WHERE id = ?').get(id);
     return parseVaga(row);
 }
 
-function create(data) {
+function create(data: Partial<Vaga>): Vaga | null {
     const stmt = db.prepare(`
         INSERT INTO vagas (title, company, location, email, time, type, salary, target, desc, requirements, benefits)
         VALUES (@title, @company, @location, @email, @time, @type, @salary, @target, @desc, @requirements, @benefits)
@@ -40,11 +55,11 @@ function create(data) {
         benefits:     JSON.stringify(data.benefits     || [])
     });
 
-    return findById(result.lastInsertRowid);
+    return findById(result.lastInsertRowid as number);
 }
 
-function update(id, data) {
-    const current = db.prepare('SELECT * FROM vagas WHERE id = ?').get(id);
+function update(id: number, data: Partial<Vaga>): Vaga | null {
+    const current: any = db.prepare('SELECT * FROM vagas WHERE id = ?').get(id);
     if (!current) return null;
 
     const merged = {
@@ -72,11 +87,11 @@ function update(id, data) {
     return findById(id);
 }
 
-function remove(id) {
+function remove(id: number): Vaga | null {
     const vaga = findById(id);
     if (!vaga) return null;
     db.prepare('DELETE FROM vagas WHERE id = ?').run(id);
     return vaga;
 }
 
-module.exports = { findAll, findById, create, update, remove };
+export { findAll, findById, create, update, remove };

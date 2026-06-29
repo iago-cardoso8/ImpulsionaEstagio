@@ -1,6 +1,17 @@
-const db = require('../database/database');
+import db from '../database/database';
 
-function parseProfile(row) {
+export interface Profile {
+    id: number;
+    name: string;
+    email: string;
+    course: string;
+    campus: string;
+    status: string;
+    availability: string;
+    updated_at?: string;
+}
+
+function parseProfile(row: any): Profile | null {
     if (!row) return null;
     return {
         id: row.id,
@@ -14,12 +25,12 @@ function parseProfile(row) {
     };
 }
 
-function find() {
-    const row = db.prepare('SELECT * FROM perfil ORDER BY id LIMIT 1').get();
+function find(): Profile | null {
+    const row: any = db.prepare('SELECT * FROM perfil ORDER BY id LIMIT 1').get();
     return parseProfile(row);
 }
 
-function create(data) {
+function create(data: Partial<Profile>): Profile | null {
     const stmt = db.prepare(`
         INSERT INTO perfil (name, email, course, campus, status, availability)
         VALUES (@name, @email, @course, @campus, @status, @availability)
@@ -37,7 +48,7 @@ function create(data) {
     return find();
 }
 
-function update(data) {
+function update(data: Partial<Profile>): Profile | null {
     const current = find();
     if (!current) return null;
 
@@ -66,8 +77,4 @@ function update(data) {
     return find();
 }
 
-module.exports = {
-    find,
-    create,
-    update
-};
+export { find, create, update };
