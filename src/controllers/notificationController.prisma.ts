@@ -146,7 +146,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     const notificacaoExistente = await NotificationService.findById(id);
 
     if (!notificacaoExistente) {
@@ -192,7 +192,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const id = parseInt(req.params.id, 10);
+    const id = parseInt(String(req.params.id), 10);
     const notificacaoRemovida = await NotificationService.remove(id);
 
     if (!notificacaoRemovida) {

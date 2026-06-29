@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import * as ProfileModel from '../models/profileModel';
+import * as ProfileModel from '../models/perfilModel.prisma';
 
 const router: Router = express.Router();
 
@@ -27,21 +27,21 @@ function validarCampos(data: any): ValidationError | null {
     return null;
 }
 
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
     try {
-        const perfil = ProfileModel.find();
-        if (!perfil) {
+        const perfis = await ProfileModel.findAll();
+        if (perfis.length === 0) {
             res.status(404).json({ sucesso: false, erro: 'Perfil não encontrado' });
             return;
         }
-        res.status(200).json({ sucesso: true, dados: perfil });
+        res.status(200).json({ sucesso: true, dados: perfis[0] });
     } catch (erro: any) {
         console.error('Erro ao buscar perfil:', erro.message);
         res.status(500).json({ sucesso: false, erro: 'Erro interno ao buscar perfil' });
     }
 });
 
-router.put('/', (req: Request, res: Response): void => {
+router.put('/', async (req: Request, res: Response): Promise<void> => {
     try {
         const erroValidacao = validarCampos(req.body) || validarEmail(req.body.email);
         if (erroValidacao) {
@@ -49,7 +49,15 @@ router.put('/', (req: Request, res: Response): void => {
             return;
         }
 
-        const perfilAtualizado = ProfileModel.update(req.body);
+        const perfis = await ProfileModel.findAll();
+        let perfilAtualizado;
+
+        if (perfis.length > 0) {
+            perfilAtualizado = await ProfileModel.update(perfis[0].id, req.body);
+        } else {
+            perfilAtualizado = await ProfileModel.create(req.body);
+        }
+
         if (!perfilAtualizado) {
             res.status(404).json({ sucesso: false, erro: 'Perfil não encontrado' });
             return;

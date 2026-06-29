@@ -11,6 +11,30 @@ import notificationController from './src/controllers/notificationController.pri
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
+function startServer(port: number): void {
+    const server = app.listen(port, () => {
+        console.log(`
+╔═══════════════════════════════════════════╗
+║  🚀 Servidor Impulsiona Estágio           ║
+║  URL: http://localhost:${port}            ║
+║  Environment: ${process.env.NODE_ENV || 'development'}              ║
+║  Database: SQLite + Prisma ORM            ║
+╚═══════════════════════════════════════════╝
+        `);
+    });
+
+    server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+            console.warn(`Porta ${port} ocupada. Tentando ${port + 1}...`);
+            server.close(() => startServer(port + 1));
+            return;
+        }
+
+        console.error('Erro ao iniciar o servidor:', error);
+        process.exit(1);
+    });
+}
+
 // ── Middlewares ─────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -61,13 +85,4 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // ── Start ────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-    console.log(`
-╔═══════════════════════════════════════════╗
-║  🚀 Servidor Impulsiona Estágio           ║
-║  URL: http://localhost:${PORT}            ║
-║  Environment: ${process.env.NODE_ENV || 'development'}              ║
-║  Database: SQLite + Prisma ORM            ║
-╚═══════════════════════════════════════════╝
-    `);
-});
+startServer(PORT);

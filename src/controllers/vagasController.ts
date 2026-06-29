@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import * as VagasModel from '../models/vagasModel';
+import * as VagasModel from '../models/vagasModel.prisma';
 
 const router: Router = express.Router();
 
@@ -76,9 +76,9 @@ function validarId(id: string | string[] | undefined): ValidationError | null {
 // ROTAS - READ (GET)
 // ────────────────────────────────────────────────────────────
 
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
     try {
-        const vagas = VagasModel.findAll();
+        const vagas = await VagasModel.findAll();
         res.status(200).json({
             sucesso: true,
             quantidade: vagas.length,
@@ -93,7 +93,7 @@ router.get('/', (req: Request, res: Response): void => {
     }
 });
 
-router.get('/:id', (req: Request, res: Response): void => {
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
@@ -101,7 +101,7 @@ router.get('/:id', (req: Request, res: Response): void => {
             return;
         }
 
-        const vaga = VagasModel.findById(parseInt(req.params.id as string, 10));
+        const vaga = await VagasModel.findById(parseInt(req.params.id as string, 10));
 
         if (!vaga) {
             res.status(404).json({
@@ -129,7 +129,7 @@ router.get('/:id', (req: Request, res: Response): void => {
 // ROTAS - CREATE (POST)
 // ────────────────────────────────────────────────────────────
 
-router.post('/', (req: Request, res: Response): void => {
+router.post('/', async (req: Request, res: Response): Promise<void> => {
     try {
         const erroValidacao = validarCamposObrigatorios(req.body) || validarEmail(req.body.email as string) || validarSalary(req.body.salary as string);
         if (erroValidacao) {
@@ -137,7 +137,7 @@ router.post('/', (req: Request, res: Response): void => {
             return;
         }
 
-        const novaVaga = VagasModel.create(req.body);
+        const novaVaga = await VagasModel.create(req.body);
         
         res.status(201).json({
             sucesso: true,
@@ -157,7 +157,7 @@ router.post('/', (req: Request, res: Response): void => {
 // ROTAS - UPDATE (PUT)
 // ────────────────────────────────────────────────────────────
 
-router.put('/:id', (req: Request, res: Response): void => {
+router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
@@ -173,7 +173,7 @@ router.put('/:id', (req: Request, res: Response): void => {
 
         const id = parseInt(req.params.id as string, 10);
 
-        const vagaExistente = VagasModel.findById(id);
+        const vagaExistente = await VagasModel.findById(id);
         if (!vagaExistente) {
             res.status(404).json({
                 sucesso: false,
@@ -183,7 +183,7 @@ router.put('/:id', (req: Request, res: Response): void => {
             return;
         }
 
-        const vagaAtualizada = VagasModel.update(id, req.body);
+        const vagaAtualizada = await VagasModel.update(id, req.body);
 
         res.status(200).json({
             sucesso: true,
@@ -203,7 +203,7 @@ router.put('/:id', (req: Request, res: Response): void => {
 // ROTAS - DELETE
 // ────────────────────────────────────────────────────────────
 
-router.delete('/:id', (req: Request, res: Response): void => {
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     try {
         const erroId = validarId(req.params.id);
         if (erroId) {
@@ -213,7 +213,7 @@ router.delete('/:id', (req: Request, res: Response): void => {
 
         const id = parseInt(req.params.id as string, 10);
 
-        const vagaRemovida = VagasModel.remove(id);
+        const vagaRemovida = await VagasModel.remove(id);
 
         if (!vagaRemovida) {
             res.status(404).json({

@@ -7,6 +7,7 @@ erDiagram
         string title
         string company
         string location
+        string email
         string time
         string type
         string salary
@@ -15,6 +16,7 @@ erDiagram
         json requirements
         json benefits
         datetime created_at
+        datetime updated_at
     }
 
     CANDIDATOS {
@@ -27,6 +29,7 @@ erDiagram
         json skills
         string experience
         datetime created_at
+        datetime updated_at
     }
 
     CANDIDATURAS {
@@ -36,4 +39,25 @@ erDiagram
         string status
         string cover_letter
         datetime applied_at
+        datetime updated_at
+    }
+
+    PERFIL {
+        int id PK
+        string name
+        string email
+        string course
+        string campus
+        string status
+        string availability
+        datetime created_at
+        datetime updated_at
+    }
+
+    NOTIFICATIONS {
+        int id PK
+        string title
+        string message
+        string time
+        datetime created_at
     }

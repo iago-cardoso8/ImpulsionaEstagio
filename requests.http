@@ -201,3 +201,69 @@ GET {{baseUrl}}/api/vagas
 Accept: {{contentType}}
 
 ###
+
+### ========== TESTES DA API DE PERFIL ==========
+
+### 16. Listar perfil
+GET {{baseUrl}}/api/perfil
+Accept: {{contentType}}
+
+###
+
+### 17. Criar ou atualizar perfil
+PUT {{baseUrl}}/api/perfil
+Content-Type: {{contentType}}
+
+{
+  "name": "Ana Silva",
+  "email": "ana.silva@ifpb.edu.br",
+  "course": "Informática",
+  "campus": "João Pessoa",
+  "status": "Em busca de estágio",
+  "availability": "Período Integral"
+}
+
+###
+
+### 18. Perfil com e-mail inválido
+PUT {{baseUrl}}/api/perfil
+Content-Type: {{contentType}}
+
+{
+  "name": "Ana Silva",
+  "email": "email-invalido",
+  "course": "Informática",
+  "campus": "João Pessoa"
+}
+
+###
+
+### ========== TESTES DA API DE NOTIFICAÇÕES ==========
+
+### 19. Listar notificações
+GET {{baseUrl}}/api/notificacoes
+Accept: {{contentType}}
+
+###
+
+### 20. Criar notificação
+POST {{baseUrl}}/api/notificacoes
+Content-Type: {{contentType}}
+
+{
+  "title": "Nova oportunidade",
+  "message": "Uma nova vaga foi publicada para o seu curso.",
+  "time": "Agora"
+}
+
+###
+
+### 21. Criar notificação inválida
+POST {{baseUrl}}/api/notificacoes
+Content-Type: {{contentType}}
+
+{
+  "title": "Falha"
+}
+
+###
