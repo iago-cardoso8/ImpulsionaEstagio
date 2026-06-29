@@ -40,21 +40,31 @@ function validarCampos(data: any): ValidationError | null {
 
 /**
  * GET /api/perfil
- * Busca todos os perfis
+ * Busca o perfil principal (primeiro registro).
+ * O frontend espera um único objeto em `dados`, não uma lista.
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const perfis = await PerfilService.findAll();
+    const perfil = perfis.length > 0 ? perfis[0] : null;
+
+    if (!perfil) {
+      res.status(404).json({
+        sucesso: false,
+        erro: 'Nenhum perfil encontrado',
+      });
+      return;
+    }
+
     res.status(200).json({
       sucesso: true,
-      quantidade: perfis.length,
-      dados: perfis,
+      dados: perfil,
     });
   } catch (erro: any) {
-    console.error('Erro ao buscar perfis:', erro.message);
+    console.error('Erro ao buscar perfil:', erro.message);
     res.status(500).json({
       sucesso: false,
-      erro: 'Erro interno ao buscar perfis',
+      erro: 'Erro interno ao buscar perfil',
     });
   }
 });
@@ -132,8 +142,64 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
+ * PUT /api/perfil
+ * Atualiza o perfil principal (upsert: atualiza o primeiro registro existente
+ * ou cria um novo se não houver nenhum).
+ * O frontend não envia ID — opera sempre sobre o perfil único do sistema.
+ */
+router.put('/', async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Validar email se fornecido
+    if (req.body.email) {
+      const erroEmail = validarEmail(req.body.email);
+      if (erroEmail) {
+        res.status(erroEmail.status).json(erroEmail);
+        return;
+      }
+    }
+
+    // Buscar perfil existente
+    const perfis = await PerfilService.findAll();
+    let perfilAtualizado;
+
+    if (perfis.length > 0) {
+      // Atualizar o primeiro perfil existente
+      perfilAtualizado = await PerfilService.update(perfis[0].id, req.body);
+    } else {
+      // Não há perfil — validar campos obrigatórios e criar
+      const erroValidacao = validarCampos(req.body);
+      if (erroValidacao) {
+        res.status(erroValidacao.status).json(erroValidacao);
+        return;
+      }
+      perfilAtualizado = await PerfilService.create(req.body);
+    }
+
+    if (!perfilAtualizado) {
+      res.status(500).json({
+        sucesso: false,
+        erro: 'Erro ao salvar perfil',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      sucesso: true,
+      mensagem: 'Perfil salvo com sucesso',
+      dados: perfilAtualizado,
+    });
+  } catch (erro: any) {
+    console.error('Erro ao salvar perfil:', erro.message);
+    res.status(500).json({
+      sucesso: false,
+      erro: 'Erro interno ao salvar perfil',
+    });
+  }
+});
+
+/**
  * PUT /api/perfil/:id
- * Atualiza um perfil
+ * Atualiza um perfil específico por ID
  */
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {

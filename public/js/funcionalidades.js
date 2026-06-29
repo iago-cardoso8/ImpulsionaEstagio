@@ -220,6 +220,19 @@ function fillProfileForm(profile) {
     getInputElement('profileCampus').value = profile.campus || '';
     getInputElement('profileStatus').value = profile.status || '';
     getInputElement('profileAvailability').value = profile.availability || '';
+    // Atualizar sidebar do perfil com dados reais
+    const sidebarName = document.querySelector('#view-profile-container .profile-card .card-body h3');
+    const sidebarCourse = document.querySelector('#view-profile-container .profile-card .card-body p:first-of-type');
+    const sidebarCampus = document.querySelector('#view-profile-container .profile-card .card-body p:last-of-type');
+    const sidebarAvatar = document.querySelector('#view-profile-container .avatar-circle');
+    if (sidebarName)
+        sidebarName.textContent = profile.name || 'Sem nome';
+    if (sidebarCourse)
+        sidebarCourse.textContent = profile.course || '';
+    if (sidebarCampus)
+        sidebarCampus.textContent = profile.campus || '';
+    if (sidebarAvatar)
+        sidebarAvatar.textContent = (profile.name || 'U').charAt(0).toUpperCase();
 }
 function setProfileMessage(message, isError = true) {
     const profileMessage = getElement('profileMessage');
