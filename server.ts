@@ -1,28 +1,39 @@
 import express, { Express } from 'express';
 import path from 'path';
 import morgan from 'morgan';
+import 'dotenv/config';
 
-import { runMigration } from './src/database/migration';
-import { runSeeders } from './src/database/seeders';
-import vagasController from './src/controllers/vagasController';
-import profileController from './src/controllers/profileController';
-import notificationController from './src/controllers/notificationController';
+// Controllers com Prisma
+import vagasController from './src/controllers/vagasController.prisma';
+import profileController from './src/controllers/profileController.prisma';
+import notificationController from './src/controllers/notificationController.prisma';
 
 const app: Express = express();
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
-// ── Banco de dados ──────────────────────────────────────────────
-runMigration();
-runSeeders();
-
 // ── Middlewares ─────────────────────────────────────────────────
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Rotas ───────────────────────────────────────────────────────
+// ── Rotas API ────────────────────────────────────────────────────
+/**
+ * @route GET /api/vagas
+ * @desc Listar todas as vagas
+ */
 app.use('/api/vagas', vagasController);
+
+/**
+ * @route GET /api/perfil
+ * @desc Gerenciar perfil do usuário
+ */
 app.use('/api/perfil', profileController);
+
+/**
+ * @route GET /api/notificacoes
+ * @desc Listar todas as notificações
+ */
 app.use('/api/notificacoes', notificationController);
 
 // Rota principal - entrega o index.html
@@ -30,7 +41,33 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ── Start ───────────────────────────────────────────────────────
+// Health check
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        sucesso: true,
+        mensagem: 'Servidor operacional',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// ── Error Handler ────────────────────────────────────────────────
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Erro não tratado:', err);
+    res.status(500).json({
+        sucesso: false,
+        erro: 'Erro interno do servidor',
+        mensagem: err.message
+    });
+});
+
+// ── Start ────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+    console.log(`
+╔═══════════════════════════════════════════╗
+║  🚀 Servidor Impulsiona Estágio           ║
+║  URL: http://localhost:${PORT}            ║
+║  Environment: ${process.env.NODE_ENV || 'development'}              ║
+║  Database: SQLite + Prisma ORM            ║
+╚═══════════════════════════════════════════╝
+    `);
 });
