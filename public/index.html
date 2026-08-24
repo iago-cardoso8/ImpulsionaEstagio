@@ -33,9 +33,13 @@
       <button id="authCloseBtn" class="auth-close" type="button" aria-label="Fechar">&times;</button>
       <h2 id="authTitle">Entrar</h2>
       <form id="authForm">
-        <div id="authNameField" class="hidden"><label for="authName">Nome</label><input id="authName" type="text" minlength="2"></div>
-        <label for="authEmail">E-mail</label><input id="authEmail" type="email" required autocomplete="email">
-        <label for="authPassword">Senha</label><input id="authPassword" type="password" required minlength="6" autocomplete="current-password">
+        <div id="authNameField" class="hidden"><label for="authName">Nome completo</label><input id="authName" type="text" minlength="2" autocomplete="name"></div>
+        <label for="authEmail">E-mail</label>
+        <input id="authEmail" type="email" required autocomplete="email" placeholder="nome@exemplo.com" aria-describedby="authEmailHint">
+        <small id="authEmailHint" class="field-hint">Use um e-mail válido, como nome@exemplo.com.</small>
+        <label for="authPassword">Senha</label>
+        <div class="password-field"><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Mínimo de 6 caracteres"><button id="togglePasswordBtn" class="password-toggle" type="button" aria-label="Mostrar senha">&#128065;</button></div>
+        <small id="authPasswordHint" class="field-hint">A senha deve ter no mínimo 6 caracteres.</small>
         <p id="authMessage" class="form-message"></p>
         <button id="authSubmitBtn" class="btn-register" type="submit">Entrar</button>
       </form>
@@ -252,10 +256,10 @@
         <aside class="profile-sidebar">
           <div class="profile-card">
             <div class="card-header-green">
-              <div class="avatar-circle">A</div>
+              <div class="avatar-circle" id="profileAvatar">A</div>
             </div>
             <div class="card-body">
-              <h3>Ana Silva</h3>
+              <h3 id="profileDisplayName">Ana Silva</h3>
               <p>Estudante de Informática</p>
               <p>IFPB - Campus João Pessoa</p>
             </div>

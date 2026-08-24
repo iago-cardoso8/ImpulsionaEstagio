@@ -11,10 +11,19 @@ function authFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Re
 function setAuthState(user: AuthUser | null, token?: string) {
     authenticatedUser = user;
     if (token) localStorage.setItem('impulsiona_token', token);
+    if (user) localStorage.setItem('impulsiona_user', JSON.stringify(user));
+    else localStorage.removeItem('impulsiona_user');
     const label = document.getElementById('authUserLabel');
     const action = document.getElementById('authActionBtn');
     if (label) label.textContent = user ? `Olá, ${user.name}` : 'Visitante';
     if (action) action.textContent = user ? 'Sair' : 'Entrar';
+    const profileName = document.getElementById('profileDisplayName');
+    const profileAvatar = document.getElementById('profileAvatar');
+    if (profileName) profileName.textContent = user?.name || 'Visitante';
+    if (profileAvatar) profileAvatar.textContent = user?.name?.charAt(0).toUpperCase() || '?';
+    document.querySelectorAll<HTMLElement>('[data-auth-required]').forEach(element => {
+        element.classList.toggle('auth-disabled', !user);
+    });
 }
 function setAuthMessage(message: string, error = true) {
     const target = document.getElementById('authMessage');
@@ -23,7 +32,7 @@ function setAuthMessage(message: string, error = true) {
 async function loadAuthState() {
     if (!isAuthenticated()) return;
     const response = await authFetch('/api/auth/me');
-    if (!response.ok) { localStorage.removeItem('impulsiona_token'); return; }
+    if (!response.ok) { localStorage.removeItem('impulsiona_token'); localStorage.removeItem('impulsiona_user'); return; }
     const result = await response.json(); setAuthState(result.usuario);
 }
 function openAuthPanel(register = false) {
@@ -37,10 +46,19 @@ async function handleAuthSubmit(event: Event) {
     event.preventDefault();
     const register = !document.getElementById('authNameField')!.classList.contains('hidden');
     const value = (id: string) => (document.getElementById(id) as HTMLInputElement).value;
-    const response = await fetch(`/api/auth/${register ? 'register' : 'login'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: value('authName'), email: value('authEmail'), password: value('authPassword') }) });
-    const result = await response.json();
-    if (!response.ok) { setAuthMessage(result.erro || 'Não foi possível autenticar.'); return; }
-    setAuthState(result.usuario, result.token); document.getElementById('auth-panel')?.classList.add('hidden');
+    const email = value('authEmail').trim().toLowerCase();
+    const password = value('authPassword');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setAuthMessage('Informe um e-mail no formato nome@exemplo.com.'); return; }
+    if (password.length < 6) { setAuthMessage('A senha deve ter no mínimo 6 caracteres.'); return; }
+    try {
+        const response = await fetch(`/api/auth/${register ? 'register' : 'login'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: value('authName'), email, password }) });
+        const result = await response.json();
+        if (!response.ok) {
+            setAuthMessage(result.erro || 'Não foi possível autenticar.');
+            return;
+        }
+        setAuthState(result.usuario, result.token); document.getElementById('auth-panel')?.classList.add('hidden');
+    } catch { setAuthMessage('Não foi possível conectar ao servidor.'); }
 }
 document.getElementById('authActionBtn')?.addEventListener('click', () => {
     if (!isAuthenticated()) { openAuthPanel(); return; }
@@ -48,5 +66,11 @@ document.getElementById('authActionBtn')?.addEventListener('click', () => {
 });
 document.getElementById('authCloseBtn')?.addEventListener('click', () => document.getElementById('auth-panel')?.classList.add('hidden'));
 document.getElementById('authToggleBtn')?.addEventListener('click', () => openAuthPanel(document.getElementById('authTitle')?.textContent === 'Entrar'));
+document.getElementById('togglePasswordBtn')?.addEventListener('click', () => {
+    const password = document.getElementById('authPassword') as HTMLInputElement;
+    const button = document.getElementById('togglePasswordBtn');
+    password.type = password.type === 'password' ? 'text' : 'password';
+    button?.setAttribute('aria-label', password.type === 'password' ? 'Mostrar senha' : 'Ocultar senha');
+});
 document.getElementById('authForm')?.addEventListener('submit', handleAuthSubmit);
 void loadAuthState();

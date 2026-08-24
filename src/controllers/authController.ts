@@ -47,10 +47,13 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const user = await prisma.usuario.findUnique({ where: { email } });
-  const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
-
-  if (!user || !passwordMatches) {
-    res.status(401).json({ sucesso: false, erro: 'E-mail ou senha inválidos' });
+  if (!user) {
+    res.status(404).json({ sucesso: false, erro: 'Email de cadastro não encontrado. Faça login.' });
+    return;
+  }
+  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+  if (!passwordMatches) {
+    res.status(401).json({ sucesso: false, erro: 'Senha incorreta. Tente novamente.' });
     return;
   }
   res.json({ sucesso: true, mensagem: 'Login realizado com sucesso', usuario: publicUser(user), token: issueToken(user) });

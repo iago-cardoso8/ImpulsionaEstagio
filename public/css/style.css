@@ -45,6 +45,11 @@ header {
 .auth-box h2 { margin-top: 0; color: var(--dark-green); }
 .auth-box label { display: block; margin: 12px 0 5px; font-weight: 600; }
 .auth-box input { box-sizing: border-box; width: 100%; padding: 11px; border: 1px solid var(--card-border); border-radius: 5px; }
+.field-hint { display: block; margin-top: 5px; color: #66736d; font-size: .82rem; }
+.password-field { position: relative; }
+.password-field input { padding-right: 44px; }
+.password-toggle { position: absolute; top: 5px; right: 5px; width: 34px; height: 34px; border: 0; background: transparent; cursor: pointer; font-size: 18px; }
+.auth-disabled { opacity: .65; }
 .auth-close { position: absolute; top: 10px; right: 14px; border: 0; background: transparent; font-size: 26px; cursor: pointer; }
 .auth-link { margin-top: 16px; border: 0; background: transparent; color: var(--dark-green); cursor: pointer; text-decoration: underline; }
 .hidden { display: none !important; }
