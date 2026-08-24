@@ -25,7 +25,27 @@ Content-Type: {{contentType}}
 
 > {% client.global.set("authToken", response.body.token); %}
 
-### 3. Login invalido (esperado: 401)
+### 3. Cadastro inválido (esperado: 400)
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "A",
+  "email": "email-invalido",
+  "password": "123"
+}
+
+### 4. Cadastro com e-mail já existente (esperado: 409)
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Usuario Duplicado",
+  "email": "usuario.teste@example.com",
+  "password": "SenhaSegura123"
+}
+
+### 5. Login invalido (esperado: 401)
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
@@ -34,16 +54,16 @@ Content-Type: {{contentType}}
   "password": "senha-incorreta"
 }
 
-### 4. Rota protegida sem autenticacao (esperado: 401)
+### 6. Rota protegida sem autenticacao (esperado: 401)
 GET {{baseUrl}}/api/perfil
 Accept: {{contentType}}
 
-### 5. Rota protegida com token (esperado: 200 ou 404 se ainda nao houver perfil)
+### 7. Rota protegida com token (esperado: 200 ou 404 se ainda nao houver perfil)
 GET {{baseUrl}}/api/perfil
 Authorization: Bearer {{authToken}}
 Accept: {{contentType}}
 
-### 6. Logout
+### 8. Logout
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{authToken}}
 Accept: {{contentType}}

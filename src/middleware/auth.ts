@@ -3,7 +3,10 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-me';
+const jwtSecret = process.env.JWT_SECRET || '';
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET não configurado');
+}
 
 export interface AuthUser {
   id: number;
@@ -29,7 +32,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const payload = jwt.verify(token, jwtSecret) as AuthUser;
+    const payload = jwt.verify(token, jwtSecret) as unknown as AuthUser;
     const user = await prisma.usuario.findUnique({ where: { id: payload.id } });
     if (!user) {
       res.status(401).json({ sucesso: false, erro: 'Usuário não encontrado' });

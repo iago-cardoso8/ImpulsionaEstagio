@@ -132,6 +132,10 @@ function showDetails(job) {
     const benList = Array.isArray(job.benefits)
         ? job.benefits.map((b) => `<li>${b}</li>`).join("")
         : job.benefits ? `<li>${job.benefits}</li>` : '<li>Nenhum benefício listado</li>';
+    const managementActions = isAuthenticated()
+        ? `<button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
+                    <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>`
+        : '';
     const jobDetails = getElement('job-details');
     if (!jobDetails)
         return;
@@ -146,8 +150,7 @@ function showDetails(job) {
           <p class="detail-email">E-mail: ${job.email || 'Não informado'}</p>
         </div>
         <div class="detail-actions">
-          <button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
-          <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>
+                    ${managementActions}
           <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
             ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
           </button>

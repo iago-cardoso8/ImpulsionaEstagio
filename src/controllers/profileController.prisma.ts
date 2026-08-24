@@ -40,13 +40,12 @@ function validarCampos(data: any): ValidationError | null {
 
 /**
  * GET /api/perfil
- * Busca o perfil principal (primeiro registro).
+ * Busca o perfil do usuário autenticado.
  * O frontend espera um único objeto em `dados`, não uma lista.
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const perfis = await PerfilService.findAll();
-    const perfil = perfis.length > 0 ? perfis[0] : null;
+    const perfil = await PerfilService.findByUsuarioId(req.user!.id);
 
     if (!perfil) {
       res.status(404).json({
@@ -92,6 +91,10 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+    if (perfil.usuarioId !== req.user!.id) {
+      res.status(403).json({ sucesso: false, erro: 'Acesso negado a este perfil' });
+      return;
+    }
 
     res.status(200).json({
       sucesso: true,
@@ -118,7 +121,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const novoPerfil = await PerfilService.create(req.body);
+    const novoPerfil = await PerfilService.create({ ...req.body, usuarioId: req.user!.id });
     if (!novoPerfil) {
       res.status(500).json({
         sucesso: false,
@@ -143,9 +146,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 /**
  * PUT /api/perfil
- * Atualiza o perfil principal (upsert: atualiza o primeiro registro existente
- * ou cria um novo se não houver nenhum).
- * O frontend não envia ID — opera sempre sobre o perfil único do sistema.
+ * Atualiza ou cria o perfil do usuário autenticado.
+ * O frontend não envia ID — opera sobre o perfil associado ao token.
  */
 router.put('/', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -158,13 +160,11 @@ router.put('/', async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Buscar perfil existente
-    const perfis = await PerfilService.findAll();
+    const perfilExistente = await PerfilService.findByUsuarioId(req.user!.id);
     let perfilAtualizado;
 
-    if (perfis.length > 0) {
-      // Atualizar o primeiro perfil existente
-      perfilAtualizado = await PerfilService.update(perfis[0].id, req.body);
+    if (perfilExistente) {
+      perfilAtualizado = await PerfilService.update(perfilExistente.id, req.body);
     } else {
       // Não há perfil — validar campos obrigatórios e criar
       const erroValidacao = validarCampos(req.body);
@@ -172,7 +172,7 @@ router.put('/', async (req: Request, res: Response): Promise<void> => {
         res.status(erroValidacao.status).json(erroValidacao);
         return;
       }
-      perfilAtualizado = await PerfilService.create(req.body);
+      perfilAtualizado = await PerfilService.create({ ...req.body, usuarioId: req.user!.id });
     }
 
     if (!perfilAtualizado) {
@@ -229,6 +229,10 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
+    if (perfilExistente.usuarioId !== req.user!.id) {
+      res.status(403).json({ sucesso: false, erro: 'Acesso negado a este perfil' });
+      return;
+    }
 
     const perfilAtualizado = await PerfilService.update(id, req.body);
     if (!perfilAtualizado) {
@@ -265,6 +269,16 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
         sucesso: false,
         erro: 'ID inválido',
       });
+      return;
+    }
+
+    const perfilExistente = await PerfilService.findById(id);
+    if (!perfilExistente) {
+      res.status(404).json({ sucesso: false, erro: 'Perfil não encontrado' });
+      return;
+    }
+    if (perfilExistente.usuarioId !== req.user!.id) {
+      res.status(403).json({ sucesso: false, erro: 'Acesso negado a este perfil' });
       return;
     }
 

@@ -6,7 +6,10 @@ import { requireAuth } from '../middleware/auth';
 
 const router: Router = express.Router();
 const prisma = new PrismaClient();
-const jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-me';
+const jwtSecret = process.env.JWT_SECRET || '';
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET não configurado');
+}
 
 function publicUser(user: { id: number; name: string; email: string; role: string }) {
   return { id: user.id, name: user.name, email: user.email, role: user.role };

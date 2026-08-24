@@ -14,6 +14,7 @@ export interface CreatePerfilInput {
   email: string;
   course: string;
   campus: string;
+  usuarioId: number;
   status?: string;
   availability?: string;
 }
@@ -33,6 +34,7 @@ export interface PerfilResponse {
   email: string;
   course: string;
   campus: string;
+  usuarioId: number | null;
   status: string;
   availability: string;
   createdAt: Date;
@@ -55,6 +57,12 @@ async function findById(id: number): Promise<PerfilResponse | null> {
   });
 }
 
+async function findByUsuarioId(usuarioId: number): Promise<PerfilResponse | null> {
+  return await prisma.perfil.findUnique({
+    where: { usuarioId },
+  });
+}
+
 async function findByEmail(email: string): Promise<PerfilResponse | null> {
   const perfis = await prisma.perfil.findMany({
     where: { email },
@@ -70,6 +78,7 @@ async function create(data: CreatePerfilInput): Promise<PerfilResponse | null> {
         email: data.email,
         course: data.course,
         campus: data.campus,
+        usuarioId: data.usuarioId,
         status: data.status || '',
         availability: data.availability || '',
       },
@@ -112,4 +121,4 @@ async function remove(id: number): Promise<PerfilResponse | null> {
   }
 }
 
-export { findAll, findById, findByEmail, create, update, remove };
+export { findAll, findById, findByUsuarioId, findByEmail, create, update, remove };
