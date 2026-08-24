@@ -10,6 +10,7 @@ Aplicação web de oportunidades de estágio integrada ao back-end em Node.js/Ex
 - Migrations e seed para criação e população inicial do banco
 - Interface web com criação, listagem, edição e remoção de vagas
 - Testes de API via REST Client no arquivo requests.http
+- Autenticação com bcrypt, JWT, middleware e rotas protegidas
 
 ## Estrutura principal
 
@@ -69,6 +70,10 @@ O arquivo requests.http contém requisições para:
 - Testes de perfil e notificações
 
 Use a extensão REST Client do VSCode para enviar as requisições.
+
+## Autenticação
+
+Configure `DATABASE_URL` e `JWT_SECRET` no arquivo `.env`. O cadastro usa `bcrypt` com fator 12 e grava somente `passwordHash`; o e-mail é único no banco. O login retorna um JWT com validade de duas horas. Envie-o como `Authorization: Bearer <token>` para acessar perfil e operações de escrita de vagas/notificações. O arquivo `requests.http` demonstra cadastro, login válido e inválido, acesso sem token, acesso autenticado e logout.
 
 ## CRUD no front-end
 

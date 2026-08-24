@@ -42,6 +42,10 @@ function switchView(viewName) {
         carregarVagas();
     }
     else if (viewName === 'register') {
+        if (!isAuthenticated()) {
+            openAuthPanel();
+            return;
+        }
         viewRegisterContainer?.classList.add('active-view');
         navCadastro?.classList.add('active');
     }
@@ -51,6 +55,10 @@ function switchView(viewName) {
         fetchNotifications().then(() => renderNotifications());
     }
     else if (viewName === 'profile') {
+        if (!isAuthenticated()) {
+            openAuthPanel();
+            return;
+        }
         viewProfileContainer?.classList.add('active-view');
         navPerfil?.classList.add('active');
         fetchProfile().then(data => {
@@ -62,7 +70,7 @@ function switchView(viewName) {
 }
 async function fetchProfile() {
     try {
-        const response = await fetch('/api/perfil');
+        const response = await authFetch('/api/perfil');
         if (!response.ok)
             throw new Error('Erro ao carregar perfil');
         const result = await response.json();
@@ -96,7 +104,7 @@ async function fetchNotifications() {
 }
 async function saveProfile(profile) {
     try {
-        const response = await fetch('/api/perfil', {
+        const response = await authFetch('/api/perfil', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profile)
@@ -220,19 +228,6 @@ function fillProfileForm(profile) {
     getInputElement('profileCampus').value = profile.campus || '';
     getInputElement('profileStatus').value = profile.status || '';
     getInputElement('profileAvailability').value = profile.availability || '';
-    // Atualizar sidebar do perfil com dados reais
-    const sidebarName = document.querySelector('#view-profile-container .profile-card .card-body h3');
-    const sidebarCourse = document.querySelector('#view-profile-container .profile-card .card-body p:first-of-type');
-    const sidebarCampus = document.querySelector('#view-profile-container .profile-card .card-body p:last-of-type');
-    const sidebarAvatar = document.querySelector('#view-profile-container .avatar-circle');
-    if (sidebarName)
-        sidebarName.textContent = profile.name || 'Sem nome';
-    if (sidebarCourse)
-        sidebarCourse.textContent = profile.course || '';
-    if (sidebarCampus)
-        sidebarCampus.textContent = profile.campus || '';
-    if (sidebarAvatar)
-        sidebarAvatar.textContent = (profile.name || 'U').charAt(0).toUpperCase();
 }
 function setProfileMessage(message, isError = true) {
     const profileMessage = getElement('profileMessage');

@@ -21,3 +21,7 @@ function getInputValue(id: string): string {
 function getTextValue(id: string): string {
     return getElement<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(id)?.value.trim() ?? '';
 }
+
+declare function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+declare function isAuthenticated(): boolean;
+declare function openAuthPanel(register?: boolean): void;

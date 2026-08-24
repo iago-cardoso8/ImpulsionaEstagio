@@ -1,6 +1,55 @@
 @baseUrl = http://localhost:3000
 @contentType = application/json
 
+### ========== TESTES DE AUTENTICACAO ==========
+### 1. Cadastro: a senha nunca e retornada, apenas o token JWT
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Usuario de Teste",
+  "email": "usuario.teste@example.com",
+  "password": "SenhaSegura123"
+}
+
+> {% client.global.set("authToken", response.body.token); %}
+
+### 2. Login valido: captura o JWT para as requisicoes seguintes
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "usuario.teste@example.com",
+  "password": "SenhaSegura123"
+}
+
+> {% client.global.set("authToken", response.body.token); %}
+
+### 3. Login invalido (esperado: 401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "usuario.teste@example.com",
+  "password": "senha-incorreta"
+}
+
+### 4. Rota protegida sem autenticacao (esperado: 401)
+GET {{baseUrl}}/api/perfil
+Accept: {{contentType}}
+
+### 5. Rota protegida com token (esperado: 200 ou 404 se ainda nao houver perfil)
+GET {{baseUrl}}/api/perfil
+Authorization: Bearer {{authToken}}
+Accept: {{contentType}}
+
+### 6. Logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{authToken}}
+Accept: {{contentType}}
+
+###
+
 ### ========== TESTES DA API DE VAGAS ==========
 ### Este arquivo contém todos os testes das operações CRUD
 ### Use a extensão REST Client para executar cada requisição

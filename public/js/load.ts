@@ -76,7 +76,7 @@ async function syncDatabase(): Promise<Job[]> {
 
 async function loadProfileFromDatabase(): Promise<Profile | null> {
     try {
-        const response = await fetch('/api/perfil');
+        const response = await authFetch('/api/perfil');
         if (!response.ok) throw new Error(`Erro na requisição: ${response.status}`);
 
         const resultado = await response.json() as ApiResponse<Profile>;
@@ -110,7 +110,7 @@ async function loadNotificationsFromDatabase(): Promise<NotificationItem[]> {
 
 async function saveProfileToDatabase(profileData: Profile): Promise<Profile> {
     try {
-        const response = await fetch('/api/perfil', {
+        const response = await authFetch('/api/perfil', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profileData)

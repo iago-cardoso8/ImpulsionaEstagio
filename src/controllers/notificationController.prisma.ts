@@ -1,7 +1,15 @@
 import express, { Router, Request, Response } from 'express';
 import * as NotificationService from '../models/notificationModel.prisma';
+import { requireAuth } from '../middleware/auth';
 
 const router: Router = express.Router();
+router.use((req, res, next): void => {
+  if (req.method !== 'GET') {
+    void requireAuth(req, res, next);
+    return;
+  }
+  next();
+});
 
 // ────────────────────────────────────────────────────────────
 // VALIDAÇÕES

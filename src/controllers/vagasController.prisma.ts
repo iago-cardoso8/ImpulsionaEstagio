@@ -1,7 +1,15 @@
 import express, { Router, Request, Response } from 'express';
 import * as VagasService from '../models/vagasModel.prisma';
+import { requireAuth } from '../middleware/auth';
 
 const router: Router = express.Router();
+router.use((req, res, next): void => {
+  if (['POST', 'PUT', 'DELETE'].includes(req.method)) {
+    void requireAuth(req, res, next);
+    return;
+  }
+  next();
+});
 
 // ────────────────────────────────────────────────────────────
 // VALIDAÇÕES

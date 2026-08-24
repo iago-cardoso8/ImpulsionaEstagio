@@ -68,7 +68,7 @@ async function syncDatabase() {
 }
 async function loadProfileFromDatabase() {
     try {
-        const response = await fetch('/api/perfil');
+        const response = await authFetch('/api/perfil');
         if (!response.ok)
             throw new Error(`Erro na requisição: ${response.status}`);
         const resultado = await response.json();
@@ -102,7 +102,7 @@ async function loadNotificationsFromDatabase() {
 }
 async function saveProfileToDatabase(profileData) {
     try {
-        const response = await fetch('/api/perfil', {
+        const response = await authFetch('/api/perfil', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profileData)

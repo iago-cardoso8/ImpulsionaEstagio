@@ -247,7 +247,7 @@ async function submitJobForm(event: Event) {
     const url = isEditing && editJobIdInput?.value ? `/api/vagas/${editJobIdInput.value}` : '/api/vagas';
 
     try {
-        const response = await fetch(url, {
+        const response = await authFetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -291,7 +291,7 @@ async function deleteJob(id: number) {
     }
 
     try {
-        const response = await fetch(`/api/vagas/${id}`, { method: 'DELETE' });
+        const response = await authFetch(`/api/vagas/${id}`, { method: 'DELETE' });
         const result = await response.json();
         if (!response.ok) {
             alert(result.erro || 'Erro ao excluir vaga.');

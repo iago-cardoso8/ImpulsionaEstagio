@@ -42,6 +42,7 @@ function switchView(viewName: string) {
         navVagas?.classList.add('active');
         carregarVagas();
     } else if (viewName === 'register') {
+        if (!isAuthenticated()) { openAuthPanel(); return; }
         viewRegisterContainer?.classList.add('active-view');
         navCadastro?.classList.add('active');
     } else if (viewName === 'notifications') {
@@ -49,6 +50,7 @@ function switchView(viewName: string) {
         navNotifications?.classList.add('active');
         fetchNotifications().then(() => renderNotifications());
     } else if (viewName === 'profile') {
+        if (!isAuthenticated()) { openAuthPanel(); return; }
         viewProfileContainer?.classList.add('active-view');
         navPerfil?.classList.add('active');
         fetchProfile().then(data => {
@@ -60,7 +62,7 @@ function switchView(viewName: string) {
 
 async function fetchProfile(): Promise<Profile | null> {
     try {
-        const response = await fetch('/api/perfil');
+        const response = await authFetch('/api/perfil');
         if (!response.ok) throw new Error('Erro ao carregar perfil');
         const result = await response.json() as ApiResponse<Profile>;
         if (result.sucesso && result.dados) {
@@ -92,7 +94,7 @@ async function fetchNotifications(): Promise<NotificationItem[]> {
 
 async function saveProfile(profile: Profile): Promise<Profile> {
     try {
-        const response = await fetch('/api/perfil', {
+        const response = await authFetch('/api/perfil', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profile)
