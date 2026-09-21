@@ -16,13 +16,14 @@
       <nav>
         <ul>
           <li><a onclick="switchView('jobs')" id="nav-vagas" class="active">Vagas de Estágio</a></li>
-          <li><a onclick="switchView('register')" id="nav-cadastro">Cadastro de Vagas</a></li>
+          <li><a onclick="switchView('register')" id="nav-cadastro" class="company-only hidden">Cadastro de Vagas</a></li>
           <li><a onclick="switchView('notifications')" id="nav-notifications">Notificações</a></li>
           <li><a onclick="switchView('profile')" id="nav-perfil">Meu Perfil</a></li>
         </ul>
       </nav>
       <div class="auth-area">
         <span id="authUserLabel">Visitante</span>
+        <span id="authRoleBadge" class="role-badge hidden"></span>
         <button id="authActionBtn" class="btn-secondary" type="button">Entrar</button>
       </div>
     </div>
@@ -33,7 +34,27 @@
       <button id="authCloseBtn" class="auth-close" type="button" aria-label="Fechar">&times;</button>
       <h2 id="authTitle">Entrar</h2>
       <form id="authForm">
+        <div id="authRoleField" class="hidden">
+          <label>Sou:</label>
+          <div>
+            <label><input type="radio" name="authRole" value="student" checked> Aluno</label>
+            <label><input type="radio" name="authRole" value="company"> Empresa</label>
+          </div>
+        </div>
         <div id="authNameField" class="hidden"><label for="authName">Nome completo</label><input id="authName" type="text" minlength="2" autocomplete="name"></div>
+        <div id="authCourseField" class="hidden"><label for="authCourse">Curso (IF)</label><select id="authCourse">
+            <option value="">Selecione o curso</option>
+            <option value="Informática">Informática</option>
+            <option value="Eletrotécnica">Eletrotécnica</option>
+            <option value="Mecânica">Mecânica</option>
+            <option value="Edificações">Edificações</option>
+        </select></div>
+        <div id="authCampusField" class="hidden"><label for="authCampus">Campus</label><select id="authCampus">
+            <option value="">Selecione o campus</option>
+            <option value="João Pessoa">João Pessoa</option>
+            <option value="Campina Grande">Campina Grande</option>
+            <option value="Cajazeiras">Cajazeiras</option>
+        </select></div>
         <label for="authEmail">E-mail</label>
         <input id="authEmail" type="email" required autocomplete="email" placeholder="nome@exemplo.com" aria-describedby="authEmailHint">
         <small id="authEmailHint" class="field-hint">Use um e-mail válido, como nome@exemplo.com.</small>
@@ -44,6 +65,19 @@
         <button id="authSubmitBtn" class="btn-register" type="submit">Entrar</button>
       </form>
       <button id="authToggleBtn" class="auth-link" type="button">Ainda não tenho cadastro</button>
+    </div>
+  </section>
+
+  <!-- Painel de seleção inicial: Aluno ou Empresa -->
+  <section id="role-select-panel" class="role-select-panel hidden">
+    <div class="role-box">
+      <h2>Você é:</h2>
+        <div class="role-actions">
+        <button id="choose-student" class="btn-role">🎓 Aluno</button>
+        <button id="choose-company" class="btn-role btn-primary">🏢 Empresa</button>
+      </div>
+      <p class="role-hint">Escolha seu tipo para personalizar a experiência antes de entrar.</p>
+      <button id="role-close" class="auth-close" type="button" aria-label="Fechar">&times;</button>
     </div>
   </section>
 
@@ -260,8 +294,8 @@
             </div>
             <div class="card-body">
               <h3 id="profileDisplayName">Ana Silva</h3>
-              <p>Estudante de Informática</p>
-              <p>IFPB - Campus João Pessoa</p>
+              <p id="profileRoleLine">Estudante de Informática</p>
+              <p id="profileCampusLine">IFPB - Campus João Pessoa</p>
             </div>
           </div>
 

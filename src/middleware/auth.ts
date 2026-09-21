@@ -12,6 +12,7 @@ export interface AuthUser {
   id: number;
   email: string;
   role: string;
+  name?: string;
 }
 
 declare global {
@@ -39,6 +40,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
     req.user = { id: user.id, email: user.email, role: user.role };
+    // include name for downstream authorization decisions
+    if (user.name) req.user.name = user.name;
     next();
   } catch {
     res.status(401).json({ sucesso: false, erro: 'Token inválido ou expirado' });

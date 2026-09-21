@@ -173,6 +173,11 @@ router.get('/target/:target', async (req: Request, res: Response): Promise<void>
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
+    // Only companies can create vagas
+    if (req.user?.role !== 'company') {
+      res.status(403).json({ sucesso: false, erro: 'Apenas empresas podem cadastrar vagas' });
+      return;
+    }
     const erroValidacao =
       validarCamposObrigatorios(req.body) ||
       validarEmail(req.body.email as string) ||
@@ -183,6 +188,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Force company field to the authenticated user's name and attach usuarioId to establish ownership
+    if (req.user?.name) req.body.company = req.user.name;
+    if (req.user?.id) req.body.usuarioId = req.user.id;
     const novaVaga = await VagasService.create(req.body);
 
     if (!novaVaga) {
@@ -252,6 +260,12 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Only the company that created the vaga can update it
+    if (req.user?.role !== 'company' || (req.user?.id && vagaExistente.usuarioId !== req.user.id)) {
+      res.status(403).json({ sucesso: false, erro: 'Permissão negada para atualizar esta vaga' });
+      return;
+    }
+
     const vagaAtualizada = await VagasService.update(id, req.body);
 
     res.status(200).json({
@@ -285,6 +299,12 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     const id = parseInt(req.params.id as string, 10);
+    // Only the company that created the vaga can delete it
+    if (req.user?.role !== 'company' || (req.user?.id && vagaExistente.usuarioId !== req.user.id)) {
+      res.status(403).json({ sucesso: false, erro: 'Permissão negada para remover esta vaga' });
+      return;
+    }
+
     const vagaRemovida = await VagasService.remove(id);
 
     if (!vagaRemovida) {

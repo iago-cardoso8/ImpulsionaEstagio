@@ -21,6 +21,7 @@ export interface CreateVagaInput {
   desc?: string;
   requirements?: string[];
   benefits?: string[];
+  usuarioId?: number;
 }
 
 export interface UpdateVagaInput {
@@ -50,6 +51,7 @@ export interface VagaResponse {
   desc: string;
   requirements: string[];
   benefits: string[];
+  usuarioId?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -108,6 +110,7 @@ async function create(data: CreateVagaInput): Promise<VagaResponse | null> {
         desc: data.desc || '',
         requirements: JSON.stringify(data.requirements || []),
         benefits: JSON.stringify(data.benefits || []),
+        ...(data.usuarioId !== undefined && { usuarioId: data.usuarioId }),
       },
     });
     return parseVagaResponse(vaga);

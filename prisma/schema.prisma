@@ -28,6 +28,8 @@ model Vaga {
   desc          String    @default("") // Descrição completa
   requirements  String    @default("[]") // JSON array de requisitos
   benefits      String    @default("[]") // JSON array de benefícios
+  usuarioId     Int?      @map("usuario_id")
+  usuario       Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -112,6 +114,7 @@ model Usuario {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   perfil       Perfil?
+  vagas        Vaga[]
 
   @@map("usuarios")
 }

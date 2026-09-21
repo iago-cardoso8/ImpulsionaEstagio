@@ -1,6 +1,43 @@
 "use strict";
 let profileData = null;
 let notificationsList = [];
+
+// Helper: determine if a notification is a student-targeted broadcast
+function isStudentBroadcast(notification) {
+    const text = ((notification.title || '') + ' ' + (notification.message || '')).toLowerCase();
+    // Patterns that indicate general student broadcasts
+    const patterns = [
+        'nova vaga recomendada',
+        'recado do campus',
+        'atualize seu perfil',
+        'novas oportunidades',
+        'prazo final para inscrição',
+        'prazo final para inscrição',
+        'inscrições',
+        'inscrição',
+        'atualize seu perfil',
+        'atualize seu cadastro',
+        'oportunidade em',
+        'oportunidades no curso'
+    ];
+    return patterns.some(p => text.includes(p));
+}
+
+// Allow companies to delete notifications by id
+async function deleteNotification(id) {
+    if (!confirm('Deseja realmente excluir esta notificação?')) return;
+    try {
+        const resp = await authFetch(`/api/notificacoes/${id}`, { method: 'DELETE' });
+        if (!resp.ok) throw new Error('Falha ao excluir');
+        // remove from local list and re-render
+        notificationsList = notificationsList.filter(n => n.id !== id);
+        renderNotifications();
+    }
+    catch (err) {
+        console.error('Erro ao excluir notificação', err);
+        alert('Não foi possível excluir a notificação.');
+    }
+}
 async function carregarVagas() {
     try {
         const resposta = await fetch('/api/vagas');
@@ -43,7 +80,14 @@ function switchView(viewName) {
     }
     else if (viewName === 'register') {
         if (!isAuthenticated()) {
-            openAuthPanel();
+            // open auth panel in register mode (shows role selection)
+            openAuthPanel(true);
+            return;
+        }
+        // Determine role: prefer logged user, fallback to stored choice
+        const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+        if (role !== 'company') {
+            alert('Apenas empresas podem cadastrar vagas. Faça login como empresa.');
             return;
         }
         viewRegisterContainer?.classList.add('active-view');
@@ -121,6 +165,30 @@ async function saveProfile(profile) {
         throw erro;
     }
 }
+// Ensure profile form fields visibility reflects current role
+function updateProfileFormVisibility(role) {
+    const nameInput = getInputElement('profileName');
+    const nameLabel = nameInput?.parentElement?.querySelector('label');
+    const courseInput = getElement('profileCourse');
+    const campusInput = getElement('profileCampus');
+    const courseField = courseInput?.parentElement;
+    const campusField = campusInput?.parentElement;
+    if (role === 'company') {
+        if (nameLabel) nameLabel.textContent = 'Nome da Empresa';
+        if (courseField) courseField.style.display = 'none';
+        if (campusField) campusField.style.display = 'none';
+        if (courseInput) courseInput.required = false;
+        if (campusInput) campusInput.required = false;
+    }
+    else {
+        if (nameLabel) nameLabel.textContent = 'Nome completo';
+        if (courseField) courseField.style.display = '';
+        if (campusField) campusField.style.display = '';
+        if (courseInput) courseInput.required = true;
+        if (campusInput) campusInput.required = true;
+    }
+}
+window.updateProfileFormVisibility = updateProfileFormVisibility;
 function handleSearch() {
     renderJobs();
 }
@@ -132,7 +200,9 @@ function showDetails(job) {
     const benList = Array.isArray(job.benefits)
         ? job.benefits.map((b) => `<li>${b}</li>`).join("")
         : job.benefits ? `<li>${job.benefits}</li>` : '<li>Nenhum benefício listado</li>';
-    const managementActions = isAuthenticated()
+    const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+    const isCompany = role === 'company';
+    const managementActions = isCompany
         ? `<button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
                     <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>`
         : '';
@@ -197,15 +267,62 @@ function renderNotifications() {
         listContainer.innerHTML = '<p class="notification-empty">Nenhuma notificação disponível.</p>';
         return;
     }
-    listContainer.innerHTML = notificationsToShow.map(notification => `
-        <div class="notification-card">
-            <div class="notification-header">
-                <strong>${notification.title}</strong>
-                <span>${notification.time}</span>
+    const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+    // If company, filter out student-targeted broadcasts
+    const filtered = role === 'company'
+        ? notificationsToShow.filter(n => !isStudentBroadcast(n))
+        : notificationsToShow;
+
+    listContainer.innerHTML = filtered.map(notification => {
+        // If user is a company, try to render application notifications as student candidatures
+        if (role === 'company') {
+            const lower = (notification.title + ' ' + notification.message).toLowerCase();
+            if (lower.includes('candid') || lower.includes('inscr') || lower.includes('inscrição') || lower.includes('candidato')) {
+                // Attempt to parse candidate name, course and campus from message
+                const knownCourses = ['Informática', 'Eletrotécnica', 'Mecânica', 'Edificações'];
+                const knownCampuses = ['João Pessoa', 'Campina Grande', 'Cajazeiras'];
+                let candidateName = '';
+                // Try to find "Nome: X" or "Aluno X"
+                const nameMatch = notification.message.match(/Nome[:\-]\s*([A-ZÀ-ÿ\w\s]+)/i) || notification.message.match(/Aluno[:\-]\s*([A-ZÀ-ÿ\w\s]+)/i) || notification.message.match(/^([A-ZÀ-ÿ][a-zà-ÿ]+\s[A-ZÀ-ÿ][a-zà-ÿ]+)/);
+                if (nameMatch) candidateName = (nameMatch[1] || nameMatch[0]).trim();
+                // find course and campus if present
+                let foundCourse = knownCourses.find(c => notification.message.includes(c)) || knownCourses.find(c => notification.title.includes(c)) || '';
+                let foundCampus = knownCampuses.find(c => notification.message.includes(c)) || knownCampuses.find(c => notification.title.includes(c)) || '';
+                // Fallback: try regex for campus mention
+                if (!foundCampus) {
+                    const campusMatch = notification.message.match(/campus\s+([A-Za-z\s]+)/i);
+                    if (campusMatch) foundCampus = campusMatch[1].trim();
+                }
+                const avatar = candidateName ? candidateName.charAt(0).toUpperCase() : 'A';
+                return `
+                    <div class="notification-card">
+                        <div class="notification-header">
+                            <strong>Nova candidatura</strong>
+                            <span>${notification.time}</span>
+                        </div>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div style="width:48px;height:48px;border-radius:24px;background:#2d9669;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">${avatar}</div>
+                            <div>
+                                <div style="font-weight:700">${candidateName || 'Candidato anônimo'}</div>
+                                <div style="color:#444">${foundCourse ? `Curso: ${foundCourse}` : ''} ${foundCampus ? `· Campus: ${foundCampus}` : ''}</div>
+                                <div style="margin-top:6px;color:#333">${notification.message}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        // Default render (no delete for companies)
+        return `
+            <div class="notification-card">
+                <div class="notification-header">
+                    <strong>${notification.title}</strong>
+                    <span>${notification.time}</span>
+                </div>
+                <p>${notification.message}</p>
             </div>
-            <p>${notification.message}</p>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 function renderProfile() {
     if (!profileData) {
@@ -225,12 +342,27 @@ function renderProfile() {
     }
 }
 function fillProfileForm(profile) {
-    getInputElement('profileName').value = profile.name || '';
+    const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+    // Apply visibility first so fields like required/display are correct
+    updateProfileFormVisibility(role);
+    const nameInput = getInputElement('profileName');
+    if (nameInput) nameInput.value = profile.name || '';
     getInputElement('profileEmail').value = profile.email || '';
     getInputElement('profileCourse').value = profile.course || '';
     getInputElement('profileCampus').value = profile.campus || '';
     getInputElement('profileStatus').value = profile.status || '';
     getInputElement('profileAvailability').value = profile.availability || '';
+    // Update sidebar summary lines
+    const roleLine = document.getElementById('profileRoleLine');
+    const campusLine = document.getElementById('profileCampusLine');
+    if (role === 'company') {
+        if (roleLine) roleLine.textContent = 'Empresa';
+        if (campusLine) campusLine.textContent = profile.location || '';
+    }
+    else {
+        if (roleLine) roleLine.textContent = profile.course ? `Estudante de ${profile.course}` : 'Estudante';
+        if (campusLine) campusLine.textContent = profile.campus ? `IFPB - Campus ${profile.campus}` : '';
+    }
 }
 function setProfileMessage(message, isError = true) {
     const profileMessage = getElement('profileMessage');
@@ -289,7 +421,7 @@ function renderJobs() {
     const empresasMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="empresa"]:checked')).map(cb => cb.value);
     const remunMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="remuneracao"]:checked')).map(cb => cb.value);
     const datasMarcadas = Array.from(document.querySelectorAll('.cb-filtro[data-tipo="data"]:checked')).map(cb => cb.value);
-    const filtered = jobs.filter(job => {
+    let filteredJobs = jobs.filter(job => {
         const matchesSearch = job.title.toLowerCase().includes(searchText) ||
             job.company.toLowerCase().includes(searchText);
         const matchCidade = cidadesMarcadas.length === 0 ||
@@ -321,7 +453,12 @@ function renderJobs() {
         }
         return matchesSearch && matchCidade && matchCurso && matchEmpresa && matchRemun && matchData;
     });
-    if (filtered.length === 0) {
+    // If current user is a company, show only jobs from that company
+    const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+    if (role === 'company' && window.authenticatedUser?.name) {
+        filteredJobs = filteredJobs.filter(j => String(j.company || '').trim() === String(window.authenticatedUser.name || '').trim());
+    }
+    if (filteredJobs.length === 0) {
         listContainer.innerHTML = `
             <div class="empty-state">
                 <h4>Nenhuma vaga encontrada</h4>
@@ -333,7 +470,7 @@ function renderJobs() {
             countLabel.innerText = '0 vagas encontradas';
         return;
     }
-    filtered.forEach(job => {
+    filteredJobs.forEach(job => {
         const isSaved = savedJobs.includes(job.id);
         const card = document.createElement("div");
         card.className = "job-card";
@@ -360,5 +497,5 @@ function renderJobs() {
     });
     const countLabel = getElement('count-label');
     if (countLabel)
-        countLabel.innerText = `${filtered.length} vagas encontradas`;
+        countLabel.innerText = `${filteredJobs.length} vagas encontradas`;
 }

@@ -27,6 +27,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   const name = String(req.body.name || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
+  const roleRaw = String(req.body.role || '').trim().toLowerCase();
+  const role = roleRaw === 'company' ? 'company' : 'student';
 
   if (name.length < 2 || !validEmail(email) || password.length < 6) {
     res.status(400).json({ sucesso: false, erro: 'Nome, e-mail válido e senha com no mínimo 6 caracteres são obrigatórios' });
@@ -34,8 +36,9 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   }
 
   try {
+    console.log('REGISTER request body:', req.body);
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await prisma.usuario.create({ data: { name, email, passwordHash } });
+    const user = await prisma.usuario.create({ data: { name, email, passwordHash, role } });
     res.status(201).json({ sucesso: true, mensagem: 'Usuário cadastrado com sucesso', usuario: publicUser(user), token: issueToken(user) });
   } catch (error: any) {
     if (error.code === 'P2002') {
