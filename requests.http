@@ -1,23 +1,37 @@
 @baseUrl = http://localhost:3000
 @contentType = application/json
+@testEmail = {{cadastroEstudante.response.body.$.usuario.email}}
+@authToken = {{loginEstudante.response.body.$.token}}
+@companyEmail = {{cadastroEmpresa.response.body.$.usuario.email}}
+@companyToken = {{loginEmpresa.response.body.$.token}}
+@vagaCompletaId = {{criarVagaCompleta.response.body.$.dados.id}}
+@vagaMinimaId = {{criarVagaMinima.response.body.$.dados.id}}
+@vagaArraysId = {{criarVagaArrays.response.body.$.dados.id}}
+@logoutToken = {{loginLogout.response.body.$.token}}
+
+### IMPORTANTE: envie uma requisição por vez usando o CodeLens "Send Request" acima dela.
+### Ajuste baseUrl para a URL/porta exibida no terminal ao iniciar o servidor (normalmente 3000).
+### Rode os cadastros e logins nomeados antes das requisições que usam seus e-mails/tokens.
+### Não selecione apenas o JSON ou uma linha para enviar; deixe o cursor dentro da requisição.
 
 ### ========== TESTES DE AUTENTICACAO ==========
 ### 1. Cadastro: cria conta, dispara e-mail de boas-vindas e captura token JWT
+### Ao repetir este cadastro, altere o e-mail fixo abaixo para um endereço ainda não cadastrado.
+# @name cadastroEstudante
 POST {{baseUrl}}/api/auth/register
-Content-Type: {{contentType}}
+Content-Type: application/json
 
 {
   "name": "Usuario de Teste",
-  "email": "usuario.{{$guid}}@example.com",
+  "email": "usuario.teste.20260928@example.com",
   "password": "SenhaSegura123",
   "role": "student",
   "course": "Informática",
   "campus": "João Pessoa"
 }
 
-> {% client.global.set("authToken", response.body.token); client.global.set("testEmail", response.body.usuario.email); %}
-
 ### 2. Cadastro de empresa: captura o token usado nas operações de vagas
+# @name cadastroEmpresa
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
@@ -28,9 +42,8 @@ Content-Type: {{contentType}}
   "role": "company"
 }
 
-> {% client.global.set("companyToken", response.body.token); client.global.set("companyEmail", response.body.usuario.email); %}
-
 ### Login de empresa
+# @name loginEmpresa
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
@@ -39,9 +52,8 @@ Content-Type: {{contentType}}
   "password": "SenhaSegura123"
 }
 
-> {% client.global.set("companyToken", response.body.token); %}
-
 ### 2. Login valido: captura o JWT para as requisicoes seguintes
+# @name loginEstudante
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
@@ -49,8 +61,6 @@ Content-Type: {{contentType}}
   "email": "{{testEmail}}",
   "password": "SenhaSegura123"
 }
-
-> {% client.global.set("authToken", response.body.token); %}
 
 ### 3. Cadastro inválido (esperado: 400)
 POST {{baseUrl}}/api/auth/register
@@ -188,8 +198,6 @@ Authorization: Bearer {{companyToken}}
   ]
 }
 
-> {% client.global.set("vagaCompletaId", response.body.dados.id); %}
-
 ### Buscar vaga recém-criada
 GET {{baseUrl}}/api/vagas/{{vagaCompletaId}}
 Accept: {{contentType}}
@@ -210,8 +218,6 @@ Authorization: Bearer {{companyToken}}
   "salary": "R$ 1800,00",
   "target": "Eletrotécnica"
 }
-
-> {% client.global.set("vagaMinimaId", response.body.dados.id); %}
 
 ###
 
@@ -253,8 +259,6 @@ Authorization: Bearer {{companyToken}}
     "Certificado de conclusão"
   ]
 }
-
-> {% client.global.set("vagaArraysId", response.body.dados.id); %}
 
 ###
 
@@ -468,6 +472,7 @@ Authorization: Bearer {{authToken}}
 }
 
 ### 24. Login dedicado para o teste de revogação do logout
+# @name loginLogout
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
@@ -475,8 +480,6 @@ Content-Type: {{contentType}}
   "email": "{{testEmail}}",
   "password": "SenhaSegura123"
 }
-
-> {% client.global.set("logoutToken", response.body.token); %}
 
 ### 25. Logout revoga os tokens ativos do usuário (esperado: 200)
 POST {{baseUrl}}/api/auth/logout

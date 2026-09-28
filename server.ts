@@ -91,6 +91,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
     const parserError = err as SyntaxError & { status?: number; body?: unknown };
     if (err instanceof SyntaxError && parserError.status === 400 && 'body' in parserError) {
+        console.warn(
+            `JSON inválido recebido em ${req.method} ${req.originalUrl} ` +
+            `(Content-Type: ${req.get('content-type') || 'ausente'}): ${err.message}`
+        );
         res.status(400).json({
             sucesso: false,
             erro: 'JSON inválido',
