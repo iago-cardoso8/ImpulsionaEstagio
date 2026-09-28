@@ -41,26 +41,29 @@
             <label><input type="radio" name="authRole" value="company"> Empresa</label>
           </div>
         </div>
-        <div id="authNameField" class="hidden"><label for="authName">Nome completo</label><input id="authName" type="text" minlength="2" autocomplete="name"></div>
+        <div id="authNameField" class="hidden"><label for="authName">Nome completo</label><input id="authName" type="text" minlength="2" autocomplete="name"><small id="authNameError" class="field-error hidden" aria-live="polite"></small></div>
         <div id="authCourseField" class="hidden"><label for="authCourse">Curso (IF)</label><select id="authCourse">
             <option value="">Selecione o curso</option>
             <option value="Informática">Informática</option>
             <option value="Eletrotécnica">Eletrotécnica</option>
             <option value="Mecânica">Mecânica</option>
             <option value="Edificações">Edificações</option>
-        </select></div>
+        </select><small id="authCourseError" class="field-error hidden" aria-live="polite"></small></div>
         <div id="authCampusField" class="hidden"><label for="authCampus">Campus</label><select id="authCampus">
             <option value="">Selecione o campus</option>
             <option value="João Pessoa">João Pessoa</option>
             <option value="Campina Grande">Campina Grande</option>
             <option value="Cajazeiras">Cajazeiras</option>
-        </select></div>
+        </select><small id="authCampusError" class="field-error hidden" aria-live="polite"></small></div>
         <label for="authEmail">E-mail</label>
-        <input id="authEmail" type="email" required autocomplete="email" placeholder="nome@exemplo.com" aria-describedby="authEmailHint">
+        <input id="authEmail" type="email" pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$" required autocomplete="email" placeholder="nome@exemplo.com" aria-describedby="authEmailHint authEmailError">
         <small id="authEmailHint" class="field-hint">Use um e-mail válido, como nome@exemplo.com.</small>
+        <small id="authEmailError" class="field-error hidden" aria-live="polite"></small>
         <label for="authPassword">Senha</label>
         <div class="password-field"><input id="authPassword" type="password" required minlength="6" autocomplete="current-password" placeholder="Mínimo de 6 caracteres"><button id="togglePasswordBtn" class="password-toggle" type="button" aria-label="Mostrar senha">&#128065;</button></div>
         <small id="authPasswordHint" class="field-hint">A senha deve ter no mínimo 6 caracteres.</small>
+        <small id="authPasswordError" class="field-error hidden" aria-live="polite"></small>
+        <div id="authConfirmPasswordField" class="hidden"><label for="authConfirmPassword">Confirmar senha</label><input id="authConfirmPassword" type="password" minlength="6" autocomplete="new-password"><small id="authConfirmPasswordError" class="field-error hidden" aria-live="polite"></small></div>
         <p id="authMessage" class="form-message"></p>
         <button id="authSubmitBtn" class="btn-register" type="submit">Entrar</button>
       </form>
@@ -80,6 +83,11 @@
       <button id="role-close" class="auth-close" type="button" aria-label="Fechar">&times;</button>
     </div>
   </section>
+
+  <div id="authToast" class="auth-toast hidden" role="status" aria-live="polite">
+    <span id="authToastMessage"></span>
+    <button id="authToastClose" type="button" aria-label="Fechar notificação">&times;</button>
+  </div>
 
   <main>
     <div id="view-jobs-container" class="view-section active-view">

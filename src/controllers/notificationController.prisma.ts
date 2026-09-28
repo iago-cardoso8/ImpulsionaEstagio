@@ -1,6 +1,8 @@
 import express, { Router, Request, Response } from 'express';
 import * as NotificationService from '../models/notificationModel.prisma';
 import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { createNotificationSchema, notificationIdSchema, readNotificationsSchema, updateNotificationSchema } from '../schemas/notification.schema';
 
 const router: Router = express.Router();
 router.use((req, res, next): void => {
@@ -15,39 +17,6 @@ router.use((req, res, next): void => {
 // VALIDAÇÕES
 // ────────────────────────────────────────────────────────────
 
-interface ValidationError {
-  status: number;
-  erro: string;
-  camposFaltantes?: string[];
-}
-
-function validarNotificacao(data: any): ValidationError | null {
-  const camposObrigatorios = ['title', 'message', 'time'];
-  const faltantes = camposObrigatorios.filter(
-    (campo) => !data[campo] || data[campo].toString().trim() === ''
-  );
-  if (faltantes.length > 0) {
-    return {
-      status: 400,
-      erro: 'Campos obrigatórios ausentes',
-      camposFaltantes: faltantes,
-    };
-  }
-  return null;
-}
-
-function validarId(id: any): ValidationError | null {
-  const idStr = String(id || '');
-  const idNum = parseInt(idStr, 10);
-  if (isNaN(idNum) || idNum <= 0) {
-    return {
-      status: 400,
-      erro: 'ID inválido. Deve ser um número inteiro positivo',
-    };
-  }
-  return null;
-}
-
 // ────────────────────────────────────────────────────────────
 // ROTAS
 // ────────────────────────────────────────────────────────────
@@ -56,7 +25,7 @@ function validarId(id: any): ValidationError | null {
  * GET /api/notificacoes
  * Lista todas as notificações
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', validate(readNotificationsSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const notificacoes = await NotificationService.findAll();
     res.status(200).json({
@@ -77,14 +46,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  * GET /api/notificacoes/:id
  * Busca uma notificação específica
  */
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', validate(notificationIdSchema), async (req: Request, res: Response): Promise<void> => {
   try {
-    const erroId = validarId(req.params.id);
-    if (erroId) {
-      res.status(erroId.status).json(erroId);
-      return;
-    }
-
     const notificacao = await NotificationService.findById(parseInt(String(req.params.id), 10));
     if (!notificacao) {
       res.status(404).json({
@@ -111,14 +74,8 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  * POST /api/notificacoes
  * Cria uma nova notificação
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', validate(createNotificationSchema), async (req: Request, res: Response): Promise<void> => {
   try {
-    const erroValidacao = validarNotificacao(req.body);
-    if (erroValidacao) {
-      res.status(erroValidacao.status).json(erroValidacao);
-      return;
-    }
-
     const novaNotificacao = await NotificationService.create(req.body);
     if (!novaNotificacao) {
       res.status(500).json({
@@ -146,14 +103,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  * PUT /api/notificacoes/:id
  * Atualiza uma notificação
  */
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', validate(updateNotificationSchema), async (req: Request, res: Response): Promise<void> => {
   try {
-    const erroId = validarId(req.params.id);
-    if (erroId) {
-      res.status(erroId.status).json(erroId);
-      return;
-    }
-
     const id = parseInt(String(req.params.id), 10);
     const notificacaoExistente = await NotificationService.findById(id);
 
@@ -192,14 +143,8 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
  * DELETE /api/notificacoes/:id
  * Deleta uma notificação
  */
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', validate(notificationIdSchema), async (req: Request, res: Response): Promise<void> => {
   try {
-    const erroId = validarId(req.params.id);
-    if (erroId) {
-      res.status(erroId.status).json(erroId);
-      return;
-    }
-
     const id = parseInt(String(req.params.id), 10);
     const notificacaoRemovida = await NotificationService.remove(id);
 

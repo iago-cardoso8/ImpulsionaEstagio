@@ -85,7 +85,7 @@ async function create(data: CreatePerfilInput): Promise<PerfilResponse | null> {
     });
   } catch (error) {
     console.error('Erro ao criar perfil:', error);
-    return null;
+    throw error;
   }
 }
 

@@ -12,7 +12,7 @@ export interface AuthUser {
   id: number;
   email: string;
   role: string;
-  name?: string;
+  name: string;
 }
 
 declare global {
@@ -25,25 +25,48 @@ declare global {
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authorization = req.headers.authorization;
-  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
+  const match = authorization?.match(/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/i);
+  const token = match?.[1];
 
   if (!token) {
     res.status(401).json({ sucesso: false, erro: 'Autenticação necessária' });
     return;
   }
 
+  let payload: string | jwt.JwtPayload;
   try {
-    const payload = jwt.verify(token, jwtSecret) as unknown as AuthUser;
-    const user = await prisma.usuario.findUnique({ where: { id: payload.id } });
+    payload = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
+  } catch {
+    res.status(401).json({ sucesso: false, erro: 'Token inválido ou expirado' });
+    return;
+  }
+
+  const tokenVersion = typeof payload === 'string' ? undefined : payload.tokenVersion;
+  if (
+    typeof payload === 'string' ||
+    !payload.sub ||
+    !/^[1-9]\d*$/.test(payload.sub) ||
+    typeof tokenVersion !== 'number' ||
+    !Number.isSafeInteger(tokenVersion) ||
+    tokenVersion < 0
+  ) {
+    res.status(401).json({ sucesso: false, erro: 'Token inválido ou expirado' });
+    return;
+  }
+
+  try {
+    const user = await prisma.usuario.findUnique({ where: { id: Number(payload.sub) } });
     if (!user) {
       res.status(401).json({ sucesso: false, erro: 'Usuário não encontrado' });
       return;
     }
-    req.user = { id: user.id, email: user.email, role: user.role };
-    // include name for downstream authorization decisions
-    if (user.name) req.user.name = user.name;
+    if (user.tokenVersion !== tokenVersion) {
+      res.status(401).json({ sucesso: false, erro: 'Token inválido ou sessão encerrada' });
+      return;
+    }
+    req.user = { id: user.id, email: user.email, role: user.role, name: user.name };
     next();
-  } catch {
-    res.status(401).json({ sucesso: false, erro: 'Token inválido ou expirado' });
+  } catch (error) {
+    next(error);
   }
 }

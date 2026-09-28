@@ -2,24 +2,51 @@
 @contentType = application/json
 
 ### ========== TESTES DE AUTENTICACAO ==========
-### 1. Cadastro: a senha nunca e retornada, apenas o token JWT
+### 1. Cadastro: cria conta, dispara e-mail de boas-vindas e captura token JWT
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
 {
   "name": "Usuario de Teste",
-  "email": "usuario.teste@example.com",
+  "email": "usuario.{{$guid}}@example.com",
+  "password": "SenhaSegura123",
+  "role": "student",
+  "course": "Informática",
+  "campus": "João Pessoa"
+}
+
+> {% client.global.set("authToken", response.body.token); client.global.set("testEmail", response.body.usuario.email); %}
+
+### 2. Cadastro de empresa: captura o token usado nas operações de vagas
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Empresa de Teste",
+  "email": "empresa.{{$guid}}@example.com",
+  "password": "SenhaSegura123",
+  "role": "company"
+}
+
+> {% client.global.set("companyToken", response.body.token); client.global.set("companyEmail", response.body.usuario.email); %}
+
+### Login de empresa
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "{{companyEmail}}",
   "password": "SenhaSegura123"
 }
 
-> {% client.global.set("authToken", response.body.token); %}
+> {% client.global.set("companyToken", response.body.token); %}
 
 ### 2. Login valido: captura o JWT para as requisicoes seguintes
 POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "usuario.teste@example.com",
+  "email": "{{testEmail}}",
   "password": "SenhaSegura123"
 }
 
@@ -35,14 +62,29 @@ Content-Type: {{contentType}}
   "password": "123"
 }
 
+### Cadastro de estudante sem campus (esperado: 400; não cria conta nem envia e-mail)
+POST {{baseUrl}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "name": "Estudante sem campus",
+  "email": "sem-campus.{{$guid}}@example.com",
+  "password": "SenhaSegura123",
+  "role": "student",
+  "course": "Informática"
+}
+
 ### 4. Cadastro com e-mail já existente (esperado: 409)
 POST {{baseUrl}}/api/auth/register
 Content-Type: {{contentType}}
 
 {
   "name": "Usuario Duplicado",
-  "email": "usuario.teste@example.com",
-  "password": "SenhaSegura123"
+  "email": "{{testEmail}}",
+  "password": "SenhaSegura123",
+  "role": "student",
+  "course": "Informática",
+  "campus": "João Pessoa"
 }
 
 ### 5. Login invalido (esperado: 401)
@@ -50,21 +92,25 @@ POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {
-  "email": "usuario.teste@example.com",
+  "email": "{{testEmail}}",
   "password": "senha-incorreta"
 }
 
-### 6. Rota protegida sem autenticacao (esperado: 401)
-GET {{baseUrl}}/api/perfil
+### 6. Usuário atual sem autenticação (esperado: 401)
+GET {{baseUrl}}/api/auth/me
 Accept: {{contentType}}
 
-### 7. Rota protegida com token (esperado: 200 ou 404 se ainda nao houver perfil)
-GET {{baseUrl}}/api/perfil
+### 7. Mesmo recurso protegido com token (esperado: 200)
+GET {{baseUrl}}/api/auth/me
 Authorization: Bearer {{authToken}}
 Accept: {{contentType}}
 
-### 8. Logout
-POST {{baseUrl}}/api/auth/logout
+### 8. Perfil protegido sem token (esperado: 401)
+GET {{baseUrl}}/api/perfil
+Accept: {{contentType}}
+
+### 9. Perfil criado no cadastro, protegido com token (esperado: 200)
+GET {{baseUrl}}/api/perfil
 Authorization: Bearer {{authToken}}
 Accept: {{contentType}}
 
@@ -77,13 +123,29 @@ Accept: {{contentType}}
 
 ### ========== READ OPERATIONS ==========
 
-### 1. Listar todas as vagas
+### 1. Listar todas as vagas (pública)
 GET {{baseUrl}}/api/vagas
 Accept: {{contentType}}
 
 ###
 
-### 2. Buscar vaga por ID (id: 1)
+### Filtrar vagas por query (válido)
+GET {{baseUrl}}/api/vagas?target=Inform%C3%A1tica
+Accept: {{contentType}}
+
+### Rejeitar query vazia e apontar query.target (esperado: 400)
+GET {{baseUrl}}/api/vagas?target=
+Accept: {{contentType}}
+
+###
+
+### Rejeitar query não declarada (esperado: 400)
+GET {{baseUrl}}/api/vagas?debug=1
+Accept: {{contentType}}
+
+###
+
+### 2. Buscar vaga por ID (pública; use um ID existente)
 GET {{baseUrl}}/api/vagas/1
 Accept: {{contentType}}
 
@@ -98,13 +160,16 @@ Accept: {{contentType}}
 ### ========== CREATE OPERATIONS ==========
 
 ### 4. Criar nova vaga com todos os campos
+# @name criarVagaCompleta
 POST {{baseUrl}}/api/vagas
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Desenvolvedor Back-end Node.js",
   "company": "Tech Solutions Brasil",
   "location": "São Paulo - SP",
+  "email": "contato@techsolutions.example",
   "time": "Há 1 hora",
   "type": "Estágio",
   "salary": "R$ 1500,00",
@@ -123,25 +188,37 @@ Content-Type: {{contentType}}
   ]
 }
 
+> {% client.global.set("vagaCompletaId", response.body.dados.id); %}
+
+### Buscar vaga recém-criada
+GET {{baseUrl}}/api/vagas/{{vagaCompletaId}}
+Accept: {{contentType}}
+
 ###
 
 ### 5. Criar vaga com dados mínimos (apenas obrigatórios)
+# @name criarVagaMinima
 POST {{baseUrl}}/api/vagas
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Técnico em Eletrônica",
   "company": "Indústria ABC",
   "location": "Recife - PE",
+  "email": "contato@industriaabc.example",
   "salary": "R$ 1800,00",
   "target": "Eletrotécnica"
 }
+
+> {% client.global.set("vagaMinimaId", response.body.dados.id); %}
 
 ###
 
 ### 6. Criar vaga com erro - faltam campos obrigatórios (erro 400)
 POST {{baseUrl}}/api/vagas
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Desenvolvedor Python",
@@ -151,13 +228,16 @@ Content-Type: {{contentType}}
 ###
 
 ### 7. Criar vaga com arrays de requirements e benefits
+# @name criarVagaArrays
 POST {{baseUrl}}/api/vagas
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Designer Gráfico Trainee",
   "company": "Creative Studio IFPB",
   "location": "João Pessoa - PB",
+  "email": "contato@creative.example",
   "time": "Há 3 dias",
   "type": "Estágio",
   "salary": "R$ 1100,00",
@@ -174,13 +254,17 @@ Content-Type: {{contentType}}
   ]
 }
 
+> {% client.global.set("vagaArraysId", response.body.dados.id); %}
+
 ###
 
 ### ========== UPDATE OPERATIONS ==========
 
-### 8. Atualizar apenas o título da vaga (ID: 1)
-PUT {{baseUrl}}/api/vagas/1
+### 8. Atualizar apenas o título da vaga
+# @name atualizarVagaCompleta
+PUT {{baseUrl}}/api/vagas/{{vagaCompletaId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Estágio em Eletrônica - Atualizado"
@@ -189,8 +273,9 @@ Content-Type: {{contentType}}
 ###
 
 ### 9. Atualizar múltiplos campos
-PUT {{baseUrl}}/api/vagas/1
+PUT {{baseUrl}}/api/vagas/{{vagaCompletaId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "salary": "R$ 1000,00",
@@ -201,8 +286,10 @@ Content-Type: {{contentType}}
 ###
 
 ### 10. Atualizar vaga com novo array de requirements
-PUT {{baseUrl}}/api/vagas/2
+# @name atualizarVagaMinima
+PUT {{baseUrl}}/api/vagas/{{vagaMinimaId}}
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "requirements": [
@@ -217,6 +304,7 @@ Content-Type: {{contentType}}
 ### 11. Atualizar vaga que não existe (erro 404)
 PUT {{baseUrl}}/api/vagas/9999
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Vaga inexistente"
@@ -227,27 +315,31 @@ Content-Type: {{contentType}}
 ### ========== DELETE OPERATIONS ==========
 
 ### 12. Deletar vaga por ID
-DELETE {{baseUrl}}/api/vagas/3
+DELETE {{baseUrl}}/api/vagas/{{vagaArraysId}}
+Authorization: Bearer {{companyToken}}
 Accept: {{contentType}}
 
 ###
 
 ### 13. Deletar vaga que não existe (erro 404)
 DELETE {{baseUrl}}/api/vagas/9999
+Authorization: Bearer {{companyToken}}
 Accept: {{contentType}}
 
 ###
 
 ### ========== TESTES VALIDAÇÃO DE DADOS ==========
 
-### 14. Criar vaga com requirements como string (será convertido)
+### 14. Criar vaga com listas de requisitos e benefícios
 POST {{baseUrl}}/api/vagas
 Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
 
 {
   "title": "Analista de Sistemas",
   "company": "InfoSystem Corp",
   "location": "Brasília - DF",
+  "email": "contato@infosystem.example",
   "salary": "R$ 2500,00",
   "target": "Informática",
   "desc": "Análise e desenvolvimento de sistemas integrados",
@@ -265,7 +357,29 @@ Content-Type: {{contentType}}
 
 ###
 
-### 15. Listar vagas após todas as operações (verificar integridade)
+### 15. Rejeitar salário inválido e apontar body.salary (esperado: 400)
+POST {{baseUrl}}/api/vagas
+Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
+
+{
+  "title": "Vaga com salário inválido",
+  "company": "InfoSystem Corp",
+  "location": "Brasília - DF",
+  "email": "contato@infosystem.example",
+  "salary": "0",
+  "target": "Informática"
+}
+
+###
+
+### 16. Rejeitar ID inválido e apontar params.id (esperado: 400)
+GET {{baseUrl}}/api/vagas/abc
+Accept: {{contentType}}
+
+###
+
+### 17. Listar vagas após todas as operações (verificar integridade)
 GET {{baseUrl}}/api/vagas
 Accept: {{contentType}}
 
@@ -273,15 +387,16 @@ Accept: {{contentType}}
 
 ### ========== TESTES DA API DE PERFIL ==========
 
-### 16. Listar perfil
+### 18. Listar perfil sem token (esperado: 401)
 GET {{baseUrl}}/api/perfil
 Accept: {{contentType}}
 
 ###
 
-### 17. Criar ou atualizar perfil
+### 19. Criar ou atualizar perfil
 PUT {{baseUrl}}/api/perfil
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "name": "Ana Silva",
@@ -294,9 +409,24 @@ Content-Type: {{contentType}}
 
 ###
 
-### 18. Perfil com e-mail inválido
+### Perfil já associado ao usuário (POST duplicado; esperado: 409)
+POST {{baseUrl}}/api/perfil
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Ana Silva",
+  "email": "ana.silva@ifpb.edu.br",
+  "course": "Informática",
+  "campus": "João Pessoa"
+}
+
+###
+
+### 20. Perfil com e-mail inválido
 PUT {{baseUrl}}/api/perfil
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "name": "Ana Silva",
@@ -309,15 +439,16 @@ Content-Type: {{contentType}}
 
 ### ========== TESTES DA API DE NOTIFICAÇÕES ==========
 
-### 19. Listar notificações
+### 21. Listar notificações
 GET {{baseUrl}}/api/notificacoes
 Accept: {{contentType}}
 
 ###
 
-### 20. Criar notificação
+### 22. Criar notificação
 POST {{baseUrl}}/api/notificacoes
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "title": "Nova oportunidade",
@@ -327,12 +458,34 @@ Content-Type: {{contentType}}
 
 ###
 
-### 21. Criar notificação inválida
+### 23. Criar notificação inválida
 POST {{baseUrl}}/api/notificacoes
 Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
 
 {
   "title": "Falha"
 }
+
+### 24. Login dedicado para o teste de revogação do logout
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "{{testEmail}}",
+  "password": "SenhaSegura123"
+}
+
+> {% client.global.set("logoutToken", response.body.token); %}
+
+### 25. Logout revoga os tokens ativos do usuário (esperado: 200)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{logoutToken}}
+Accept: {{contentType}}
+
+### 26. O mesmo token revogado não pode mais acessar recurso privado (esperado: 401)
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{logoutToken}}
+Accept: {{contentType}}
 
 ###

@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { authenticatedUserSchema, loginSchema, registerSchema } from '../schemas/auth.schema';
+import SendMail from '../services/SendMail';
 
 const router: Router = express.Router();
 const prisma = new PrismaClient();
@@ -15,31 +18,28 @@ function publicUser(user: { id: number; name: string; email: string; role: strin
   return { id: user.id, name: user.name, email: user.email, role: user.role };
 }
 
-function issueToken(user: { id: number; email: string; role: string }): string {
-  return jwt.sign({ id: user.id, email: user.email, role: user.role }, jwtSecret, { expiresIn: '2h' });
+function issueToken(user: { id: number; name: string; email: string; tokenVersion: number }): string {
+  return jwt.sign(
+    { name: user.name, email: user.email, tokenVersion: user.tokenVersion },
+    jwtSecret,
+    { subject: String(user.id), expiresIn: '2h', algorithm: 'HS256' }
+  );
 }
 
-function validEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-router.post('/register', async (req: Request, res: Response): Promise<void> => {
-  const name = String(req.body.name || '').trim();
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '');
-  const roleRaw = String(req.body.role || '').trim().toLowerCase();
-  const role = roleRaw === 'company' ? 'company' : 'student';
-
-  if (name.length < 2 || !validEmail(email) || password.length < 6) {
-    res.status(400).json({ sucesso: false, erro: 'Nome, e-mail válido e senha com no mínimo 6 caracteres são obrigatórios' });
-    return;
-  }
+router.post('/register', validate(registerSchema), async (req: Request, res: Response): Promise<void> => {
+  const { name, email, password, role = 'student', course, campus } = req.body;
 
   try {
-    console.log('REGISTER request body:', req.body);
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await prisma.usuario.create({ data: { name, email, passwordHash, role } });
-    res.status(201).json({ sucesso: true, mensagem: 'Usuário cadastrado com sucesso', usuario: publicUser(user), token: issueToken(user) });
+    const { user, perfil } = await prisma.$transaction(async (transaction) => {
+      const user = await transaction.usuario.create({ data: { name, email, passwordHash, role } });
+      const perfil = role === 'student'
+        ? await transaction.perfil.create({ data: { name, email, course, campus, usuarioId: user.id } })
+        : null;
+      return { user, perfil };
+    });
+    const emailEnviado = await SendMail.createNewUser({ name: user.name, email: user.email });
+    res.status(201).json({ sucesso: true, mensagem: 'Usuário cadastrado com sucesso', usuario: publicUser(user), perfil, token: issueToken(user), emailEnviado });
   } catch (error: any) {
     if (error.code === 'P2002') {
       res.status(409).json({ sucesso: false, erro: 'Este e-mail já está cadastrado' });
@@ -49,29 +49,41 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const password = String(req.body.password || '');
-  const user = await prisma.usuario.findUnique({ where: { email } });
-  if (!user) {
-    res.status(404).json({ sucesso: false, erro: 'Email de cadastro não encontrado. Faça login.' });
-    return;
+router.post('/login', validate(loginSchema), async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await prisma.usuario.findUnique({ where: { email }, include: { perfil: true } });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      res.status(401).json({ sucesso: false, erro: 'E-mail ou senha inválidos' });
+      return;
+    }
+
+    res.json({ sucesso: true, mensagem: 'Login realizado com sucesso', usuario: publicUser(user), perfil: user.perfil, token: issueToken(user) });
+  } catch {
+    res.status(500).json({ sucesso: false, erro: 'Erro interno ao autenticar usuário' });
   }
-  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordMatches) {
-    res.status(401).json({ sucesso: false, erro: 'Senha incorreta. Tente novamente.' });
-    return;
-  }
-  res.json({ sucesso: true, mensagem: 'Login realizado com sucesso', usuario: publicUser(user), token: issueToken(user) });
 });
 
-router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void> => {
-  const user = await prisma.usuario.findUnique({ where: { id: req.user!.id }, include: { perfil: true } });
-  res.json({ sucesso: true, usuario: user ? publicUser(user) : null, perfil: user?.perfil || null });
+router.get('/me', validate(authenticatedUserSchema), requireAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await prisma.usuario.findUnique({ where: { id: req.user!.id }, include: { perfil: true } });
+    res.json({ sucesso: true, usuario: user ? publicUser(user) : null, perfil: user?.perfil || null });
+  } catch {
+    res.status(500).json({ sucesso: false, erro: 'Erro interno ao buscar usuário' });
+  }
 });
 
-router.post('/logout', requireAuth, (_req: Request, res: Response): void => {
-  res.json({ sucesso: true, mensagem: 'Logout realizado. Remova o token armazenado no cliente.' });
+router.post('/logout', validate(authenticatedUserSchema), requireAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    await prisma.usuario.update({
+      where: { id: req.user!.id },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    res.json({ sucesso: true, mensagem: 'Logout realizado. Todos os tokens ativos foram invalidados.' });
+  } catch {
+    res.status(500).json({ sucesso: false, erro: 'Erro interno ao encerrar sessão' });
+  }
 });
 
 export default router;

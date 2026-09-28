@@ -172,7 +172,6 @@ async function findByTarget(target: string): Promise<VagaResponse[]> {
     where: {
       target: {
         contains: target,
-        mode: 'insensitive',
       },
     },
     orderBy: { createdAt: 'desc' },

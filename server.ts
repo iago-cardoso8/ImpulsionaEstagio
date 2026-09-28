@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import path from 'path';
 import morgan from 'morgan';
 import 'dotenv/config';
+import { ZodError } from 'zod';
 
 // Controllers com Prisma
 import vagasController from './src/controllers/vagasController.prisma';
@@ -79,11 +80,29 @@ app.get('/health', (req, res) => {
 
 // ── Error Handler ────────────────────────────────────────────────
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (err instanceof ZodError) {
+        res.status(400).json({
+            sucesso: false,
+            erro: 'Dados inválidos',
+            issues: err.issues.map(({ path, message }) => ({ path, message })),
+        });
+        return;
+    }
+
+    const parserError = err as SyntaxError & { status?: number; body?: unknown };
+    if (err instanceof SyntaxError && parserError.status === 400 && 'body' in parserError) {
+        res.status(400).json({
+            sucesso: false,
+            erro: 'JSON inválido',
+            issues: [{ path: ['body'], message: 'O corpo da requisição não contém JSON válido' }],
+        });
+        return;
+    }
+
     console.error('Erro não tratado:', err);
     res.status(500).json({
         sucesso: false,
         erro: 'Erro interno do servidor',
-        mensagem: err.message
     });
 });
 
