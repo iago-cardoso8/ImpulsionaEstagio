@@ -471,6 +471,58 @@ Authorization: Bearer {{authToken}}
   "title": "Falha"
 }
 
+### ========== TESTES DE CANDIDATURA ==========
+
+### Candidatar-se a uma vaga como estudante (esperado: 201)
+POST {{baseUrl}}/api/candidaturas
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+  "vagaId": {{vagaCompletaId}},
+  "answers": {
+    "skills": "Tenho conhecimentos de programação e banco de dados.",
+    "experience": "Desenvolvi projetos acadêmicos usando JavaScript.",
+    "motivation": "Quero aplicar meus conhecimentos em um ambiente profissional.",
+    "availability": "Imediata"
+  }
+}
+
+### Consultar as candidaturas do estudante autenticado (esperado: 200)
+GET {{baseUrl}}/api/candidaturas/minhas
+Authorization: Bearer {{authToken}}
+Accept: {{contentType}}
+
+### Tentar se candidatar novamente à mesma vaga (esperado: 409)
+POST {{baseUrl}}/api/candidaturas
+Content-Type: {{contentType}}
+Authorization: Bearer {{authToken}}
+
+{
+  "vagaId": {{vagaCompletaId}},
+  "answers": {
+    "skills": "Tenho conhecimentos de programação e banco de dados.",
+    "experience": "Desenvolvi projetos acadêmicos usando JavaScript.",
+    "motivation": "Quero aplicar meus conhecimentos em um ambiente profissional.",
+    "availability": "Imediata"
+  }
+}
+
+### Empresa não pode se candidatar a uma vaga (esperado: 403)
+POST {{baseUrl}}/api/candidaturas
+Content-Type: {{contentType}}
+Authorization: Bearer {{companyToken}}
+
+{
+  "vagaId": {{vagaCompletaId}},
+  "answers": {
+    "skills": "Tenho conhecimentos de programação e banco de dados.",
+    "experience": "Desenvolvi projetos acadêmicos usando JavaScript.",
+    "motivation": "Quero aplicar meus conhecimentos em um ambiente profissional.",
+    "availability": "Imediata"
+  }
+}
+
 ### 24. Login dedicado para o teste de revogação do logout
 # @name loginLogout
 POST {{baseUrl}}/api/auth/login

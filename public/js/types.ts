@@ -37,9 +37,11 @@ interface ApiResponse<T> {
 }
 
 interface Window {
+  authenticatedUser?: { id: number; role: string } | null;
   __ifCampiByUF?: Record<string, string[]>;
   startJobEdit?: (id: number) => void;
   deleteJob?: (id: number) => void;
+  applyToJob?: (id: number) => void;
 }
 
 declare function getElement<T extends HTMLElement>(id: string): T | null;

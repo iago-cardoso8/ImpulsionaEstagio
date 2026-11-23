@@ -1,5 +1,181 @@
 let profileData: Profile | null = null;
 let notificationsList: NotificationItem[] = [];
+let applicationIdsUserId: number | null = null;
+let applicationJobIds = new Set<number>();
+let pendingApplicationJobId: number | null = null;
+
+interface StudentApplication {
+    vagaId: number;
+}
+
+async function loadApplicationJobIds(userId: number): Promise<Set<number>> {
+    if (applicationIdsUserId === userId) return applicationJobIds;
+
+    const response = await authFetch('/api/candidaturas/minhas');
+    const result = await response.json() as ApiResponse<StudentApplication[]>;
+    if (!response.ok || !result.sucesso || !Array.isArray(result.dados)) {
+        throw new Error(result.erro || 'Não foi possível verificar suas candidaturas.');
+    }
+
+    applicationIdsUserId = userId;
+    applicationJobIds = new Set(result.dados.map(application => application.vagaId));
+    return applicationJobIds;
+}
+
+async function refreshApplicationButton(jobId: number): Promise<void> {
+    const user = window.authenticatedUser;
+    const button = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+    if (!button || user?.role !== 'student') return;
+
+    button.disabled = true;
+    button.textContent = 'Verificando inscrição...';
+    try {
+        const appliedJobIds = await loadApplicationJobIds(user.id);
+        const currentButton = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+        if (!currentButton) return;
+        currentButton.disabled = appliedJobIds.has(jobId);
+        currentButton.textContent = appliedJobIds.has(jobId) ? 'Você já se candidatou' : 'Candidatar-se';
+    } catch (error) {
+        console.error('Erro ao verificar candidatura:', error);
+        const currentButton = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+        if (currentButton) {
+            currentButton.disabled = false;
+            currentButton.textContent = 'Candidatar-se';
+        }
+    }
+}
+
+function openApplicationPanel(jobId: number): void {
+    const job = jobs.find(item => item.id === jobId);
+    if (!job) {
+        alert('Não foi possível encontrar os dados desta vaga. Atualize a página e tente novamente.');
+        return;
+    }
+
+    pendingApplicationJobId = job.id;
+    getElement<HTMLFormElement>('applicationForm')?.reset();
+    getElement<HTMLFormElement>('applicationForm')?.classList.remove('hidden');
+    getElement('applicationSuccess')?.classList.add('hidden');
+    const message = getElement<HTMLElement>('applicationFormMessage');
+    if (message) message.textContent = '';
+    const title = getElement<HTMLElement>('applicationTitle');
+    if (title) title.textContent = 'Conte mais sobre você';
+    const jobName = getElement<HTMLElement>('applicationJobName');
+    if (jobName) jobName.textContent = `${job.title} · ${job.company}`;
+    getElement('application-panel')?.classList.remove('hidden');
+    getElement<HTMLTextAreaElement>('applicationSkills')?.focus();
+}
+
+function closeApplicationPanel(): void {
+    getElement('application-panel')?.classList.add('hidden');
+    getElement<HTMLFormElement>('applicationForm')?.reset();
+    getElement<HTMLFormElement>('applicationForm')?.classList.remove('hidden');
+    getElement('applicationSuccess')?.classList.add('hidden');
+    const message = getElement<HTMLElement>('applicationFormMessage');
+    if (message) message.textContent = '';
+    pendingApplicationJobId = null;
+}
+
+function completeApplication(titleText: string, messageText: string): void {
+    const title = getElement<HTMLElement>('applicationTitle');
+    if (title) title.textContent = titleText;
+    getElement<HTMLFormElement>('applicationForm')?.classList.add('hidden');
+    const successTitle = getElement<HTMLElement>('applicationSuccessTitle');
+    if (successTitle) successTitle.textContent = titleText;
+    const successMessage = getElement<HTMLElement>('applicationSuccessMessage');
+    if (successMessage) successMessage.textContent = messageText;
+    getElement('applicationSuccess')?.classList.remove('hidden');
+}
+
+async function submitApplicationForm(event: Event): Promise<void> {
+    event.preventDefault();
+    const user = window.authenticatedUser;
+    const message = getElement<HTMLElement>('applicationFormMessage');
+    const submitButton = getElement<HTMLButtonElement>('submitApplicationBtn');
+    if (!user || user.role !== 'student') {
+        if (message) message.textContent = 'Entre com uma conta de estudante para enviar a candidatura.';
+        return;
+    }
+    if (pendingApplicationJobId === null) {
+        if (message) message.textContent = 'Selecione uma vaga antes de enviar a candidatura.';
+        return;
+    }
+
+    const answers = {
+        skills: getTextValue('applicationSkills'),
+        experience: getTextValue('applicationExperience'),
+        motivation: getTextValue('applicationMotivation'),
+        availability: getTextValue('applicationAvailability'),
+    };
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Enviando...';
+    }
+    if (message) message.textContent = '';
+
+    try {
+        const jobId = pendingApplicationJobId;
+        const response = await authFetch('/api/candidaturas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vagaId: jobId, answers }),
+        });
+        const result = await response.json() as ApiResponse<unknown>;
+        if (response.status === 409) {
+            if (applicationIdsUserId !== user.id) applicationJobIds = new Set<number>();
+            applicationIdsUserId = user.id;
+            applicationJobIds.add(jobId);
+            const applyButton = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+            if (applyButton) {
+                applyButton.disabled = true;
+                applyButton.textContent = 'Você já se candidatou';
+            }
+            completeApplication('Candidatura já registrada', 'Você já se candidatou a esta vaga.');
+            return;
+        }
+        if (!response.ok) throw new Error(result.erro || 'Não foi possível enviar sua candidatura.');
+
+        if (applicationIdsUserId !== user.id) applicationJobIds = new Set<number>();
+        applicationIdsUserId = user.id;
+        applicationJobIds.add(jobId);
+        const applyButton = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+        if (applyButton) {
+            applyButton.disabled = true;
+            applyButton.textContent = 'Candidatura enviada';
+        }
+        completeApplication('Candidatura enviada!', 'Suas respostas foram enviadas para a empresa.');
+    } catch (error) {
+        console.error('Erro ao enviar candidatura:', error);
+        if (message) message.textContent = error instanceof Error ? error.message : 'Não foi possível enviar sua candidatura.';
+    } finally {
+        const form = getElement<HTMLFormElement>('applicationForm');
+        if (submitButton && form && !form.classList.contains('hidden')) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Enviar candidatura';
+        }
+    }
+}
+
+async function applyToJob(jobId: number): Promise<void> {
+    const user = window.authenticatedUser;
+    if (!user) {
+        openAuthPanel();
+        return;
+    }
+    if (user.role !== 'student') {
+        alert('Apenas estudantes podem se candidatar a vagas.');
+        return;
+    }
+    const button = getElement<HTMLButtonElement>(`apply-job-${jobId}`);
+    if (button?.disabled) return;
+    openApplicationPanel(jobId);
+}
+
+window.applyToJob = applyToJob;
+getElement<HTMLFormElement>('applicationForm')?.addEventListener('submit', submitApplicationForm);
+getElement('closeApplicationBtn')?.addEventListener('click', closeApplicationPanel);
+getElement('cancelApplicationBtn')?.addEventListener('click', closeApplicationPanel);
+getElement('finishApplicationBtn')?.addEventListener('click', closeApplicationPanel);
 
 async function carregarVagas() {
     try {
@@ -123,10 +299,16 @@ function showDetails(job: Job) {
     const benList = Array.isArray(job.benefits)
         ? job.benefits.map((b: string) => `<li>${b}</li>`).join("")
         : job.benefits ? `<li>${job.benefits}</li>` : '<li>Nenhum benefício listado</li>';
-        const managementActions = isAuthenticated()
-                ? `<button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
-                    <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>`
-                : '';
+    const role = window.authenticatedUser?.role || localStorage.getItem('impulsiona_role_choice');
+    const isCompany = role === 'company';
+    const managementActions = isCompany
+        ? `<button class="btn-action" onclick="startJobEdit(${job.id})">Editar</button>
+           <button class="btn-action btn-delete" onclick="deleteJob(${job.id})">Excluir</button>`
+        : '';
+    const applicationAction = isCompany ? '' :
+        `<button id="apply-job-${job.id}" class="btn-action btn-apply" onclick="applyToJob(${job.id})">
+           ${window.authenticatedUser?.role === 'student' ? 'Candidatar-se' : 'Entrar para se candidatar'}
+         </button>`;
 
     const jobDetails = getElement<HTMLElement>('job-details');
     if (!jobDetails) return;
@@ -141,7 +323,8 @@ function showDetails(job: Job) {
           <p class="detail-email">E-mail: ${job.email || 'Não informado'}</p>
         </div>
         <div class="detail-actions">
-                    ${managementActions}
+          ${managementActions}
+          ${applicationAction}
           <button class="btn-save ${isSaved ? 'saved' : ''}" onclick="toggleSave(${job.id})">
             ${isSaved ? '♥ Salvo' : '♡ Salvar Vaga'}
           </button>
@@ -165,6 +348,7 @@ function showDetails(job: Job) {
       </div>
     </div>
   `;
+    void refreshApplicationButton(job.id);
 }
 
 function toggleSave(jobId: number) {

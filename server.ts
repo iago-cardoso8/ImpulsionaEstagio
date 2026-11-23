@@ -9,6 +9,7 @@ import vagasController from './src/controllers/vagasController.prisma';
 import profileController from './src/controllers/profileController.prisma';
 import notificationController from './src/controllers/notificationController.prisma';
 import authController from './src/controllers/authController';
+import candidaturasController from './src/controllers/candidaturasController.prisma';
 import { requireAuth } from './src/middleware/auth';
 
 const app: Express = express();
@@ -46,6 +47,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Rotas API ────────────────────────────────────────────────────
 app.use('/api/auth', authController);
+app.use('/api/candidaturas', candidaturasController);
 /**
  * @route GET /api/vagas
  * @desc Listar todas as vagas

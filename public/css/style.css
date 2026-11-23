@@ -790,6 +790,22 @@ nav a.active {
   background: #d8f1e4;
 }
 
+.btn-apply {
+  border: 0;
+  background: #2d9669;
+  color: #fff;
+}
+
+.btn-apply:hover {
+  background: #22543d;
+}
+
+.btn-apply:disabled {
+  cursor: default;
+  opacity: 0.72;
+  transform: none;
+}
+
 .btn-delete {
   background: #ffe7ea;
   color: #c0392b;
@@ -881,6 +897,275 @@ nav a.active {
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
 }
 
+.form-box .section-label {
+  margin: 10px 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7f3eb;
+  font-size: 1.05rem;
+}
+
+.form-row {
+  align-items: start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.col-half,
+.col-full {
+  min-width: 0;
+}
+
+.form-box label {
+  display: block;
+  margin-bottom: 8px;
+  color: #3f5b4e;
+  font-weight: 600;
+}
+
+.form-box input,
+.form-box select,
+.form-box textarea {
+  min-height: 48px;
+  line-height: 1.5;
+}
+
+.form-box textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-actions .btn-register {
+  width: auto;
+  min-width: 190px;
+  margin-top: 0;
+}
+
+.profile-details {
+  min-width: 0;
+}
+
+#profileForm {
+  display: grid;
+  gap: 22px;
+}
+
+.profile-section {
+  margin-bottom: 0;
+  padding: 24px;
+  border: 1px solid #e7f3eb;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff 0%, #fbfefc 100%);
+}
+
+.profile-section .section-label {
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7f3eb;
+  font-size: 1.05rem;
+}
+
+.profile-row {
+  gap: 20px 24px;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.profile-row:last-child {
+  margin-bottom: 0;
+}
+
+.profile-field {
+  min-width: 0;
+}
+
+.profile-field label {
+  margin-bottom: 8px;
+}
+
+.profile-field input {
+  box-sizing: border-box;
+  min-height: 48px;
+  background: #fff;
+}
+
+.profile-actions {
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-actions .btn-register {
+  width: auto;
+  min-width: 180px;
+  margin-top: 0;
+}
+
+.application-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(15, 35, 28, 0.58);
+}
+
+.application-box {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: clamp(24px, 5vw, 44px);
+  border: 1px solid #dcefe5;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff 0%, #fbfefc 100%);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.application-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #edf7f1;
+  color: #22543d;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.application-eyebrow {
+  margin: 0 0 8px;
+  color: #2d9669;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.application-box h2 {
+  margin: 0;
+  padding-right: 36px;
+  color: #1f5a41;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.application-job-name {
+  margin: 14px 0 0;
+  color: #22543d;
+  font-weight: 700;
+}
+
+.application-intro {
+  margin: 8px 0 24px;
+  color: #64746b;
+  line-height: 1.6;
+}
+
+.application-form {
+  display: grid;
+  gap: 20px;
+}
+
+.application-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #355847;
+  font-weight: 700;
+}
+
+.application-field textarea,
+.application-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid #cfe3d7;
+  border-radius: 10px;
+  background: #fff;
+  color: #263b31;
+  font: inherit;
+  line-height: 1.5;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.application-field textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.application-field textarea:focus,
+.application-field select:focus {
+  border-color: #2d9669;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(45, 150, 105, 0.12);
+}
+
+.application-form-message {
+  min-height: 1.4em;
+  margin: 0;
+  color: #b00020;
+  font-size: 0.92rem;
+}
+
+.application-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.application-actions .btn-register {
+  width: auto;
+  min-width: 190px;
+  margin: 0;
+}
+
+.application-success {
+  padding: 28px 0 8px;
+  text-align: center;
+}
+
+.application-success-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e6f5ec;
+  color: #23804f;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.application-success h3 {
+  margin: 0 0 8px;
+  color: #1f5a41;
+  font-size: 1.4rem;
+}
+
+.application-success p {
+  margin: 0 0 20px;
+  color: #64746b;
+  line-height: 1.6;
+}
+
+.application-success .btn-register {
+  width: auto;
+  min-width: 190px;
+  margin: 0;
+}
+
 @media (max-width: 1024px) {
   .content-wrapper {
     flex-direction: column;
@@ -901,6 +1186,26 @@ nav a.active {
 }
 
 @media (max-width: 720px) {
+  .application-panel {
+    padding: 12px;
+  }
+
+  .application-box {
+    max-height: calc(100vh - 24px);
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+
+  .application-actions {
+    flex-direction: column-reverse;
+  }
+
+  .application-actions .btn-register,
+  .application-actions .btn-secondary,
+  .application-success .btn-register {
+    width: 100%;
+  }
+
   header {
     padding: 12px 16px;
   }

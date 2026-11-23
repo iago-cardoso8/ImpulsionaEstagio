@@ -373,6 +373,57 @@
     </div>
   </main>
 
+  <section id="application-panel" class="application-panel hidden" role="dialog" aria-modal="true" aria-labelledby="applicationTitle">
+    <div class="application-box">
+      <button id="closeApplicationBtn" class="application-close" type="button" aria-label="Fechar candidatura">&times;</button>
+      <p class="application-eyebrow">Próxima etapa</p>
+      <h2 id="applicationTitle">Conte mais sobre você</h2>
+      <p id="applicationJobName" class="application-job-name"></p>
+      <p class="application-intro">Suas respostas serão enviadas junto com sua candidatura para a empresa.</p>
+
+      <form id="applicationForm" class="application-form">
+        <div class="application-field">
+          <label for="applicationSkills">Quais habilidades suas se relacionam com esta vaga?</label>
+          <textarea id="applicationSkills" maxlength="2000" minlength="10" required placeholder="Ex.: conhecimentos técnicos, ferramentas e competências"></textarea>
+        </div>
+
+        <div class="application-field">
+          <label for="applicationExperience">Conte sobre experiências ou projetos relacionados</label>
+          <textarea id="applicationExperience" maxlength="2000" placeholder="Esta pergunta é opcional"></textarea>
+        </div>
+
+        <div class="application-field">
+          <label for="applicationMotivation">Por que você tem interesse nesta oportunidade?</label>
+          <textarea id="applicationMotivation" maxlength="2000" minlength="10" required placeholder="Conte o que chamou sua atenção na vaga"></textarea>
+        </div>
+
+        <div class="application-field">
+          <label for="applicationAvailability">Qual é sua disponibilidade para começar?</label>
+          <select id="applicationAvailability" required>
+            <option value="">Selecione uma opção</option>
+            <option value="Imediata">Imediata</option>
+            <option value="Em até 15 dias">Em até 15 dias</option>
+            <option value="Em até 30 dias">Em até 30 dias</option>
+            <option value="A combinar">A combinar</option>
+          </select>
+        </div>
+
+        <p id="applicationFormMessage" class="application-form-message" role="status" aria-live="polite"></p>
+        <div class="application-actions">
+          <button id="cancelApplicationBtn" class="btn-secondary" type="button">Cancelar</button>
+          <button id="submitApplicationBtn" class="btn-register" type="submit">Enviar candidatura</button>
+        </div>
+      </form>
+
+      <div id="applicationSuccess" class="application-success hidden" role="status" aria-live="polite">
+        <div class="application-success-icon" aria-hidden="true">✓</div>
+        <h3 id="applicationSuccessTitle">Candidatura enviada!</h3>
+        <p id="applicationSuccessMessage">Suas respostas foram enviadas para a empresa.</p>
+        <button id="finishApplicationBtn" class="btn-register" type="button">Voltar às vagas</button>
+      </div>
+    </div>
+  </section>
+
   <script src="js/shared.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/load.js"></script>
